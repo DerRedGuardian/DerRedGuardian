@@ -3,102 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DerRedGuardian Industries®</title>
-    <!-- Modern Cyberpunk Font Family -->
+    <title>DerRedGuardian Industries® - Cyber Terminal</title>
+    
+    <!-- Cyberpunk Typografie & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Externe Stylesheet-Datei -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Cyberpunk Scanline Effect Overlay -->
+    <!-- Retro CRT Scanline Overlay -->
     <div class="scanlines"></div>
 
-    <!-- Header / Branding Bereich -->
+    <!-- Header Bereich -->
     <header class="cyber-header">
-        <div class="header-content">
-            <h1 class="glitch-title" data-text="DerRedGuardian Industries®">DerRedGuardian Industries®</h1>
-            <div class="system-status">
-                <span class="status-indicator"></span>
-                <span class="status-text">SYSTEM STATUS: ONLINE // PROTOCOL 2026</span>
+        <div class="header-container">
+            <div>
+                <h1 class="glitch-title" data-text="DerRedGuardian Industries®">DerRedGuardian Industries®</h1>
+                <p class="header-subtext">
+                    <i class="fa-solid fa-signal"></i> SYSTEM PROTOCOL 2026 // SECURE CYBER NODE
+                </p>
+            </div>
+            <!-- Besuchszähler Badge im Header -->
+            <div class="header-counter-badge">
+                <i class="fa-solid fa-users"></i> VISITOR COUNT: <span id="header-visit-count">000000</span>
             </div>
         </div>
     </header>
 
-    <!-- Main Container mit Grid Layout -->
+    <!-- Haupt-Layout Grid -->
     <div class="cyber-grid">
 
-        <!-- Sidebar / Modulare Navigation & Tools -->
+        <!-- Sidebar Navigation & Node Status -->
         <aside class="cyber-sidebar">
             <div class="sidebar-section">
                 <h3 class="sidebar-title">NAVIGATION</h3>
                 <nav class="sidebar-nav">
-                    <a href="#feed" class="nav-link active">📡 Terminal Feed</a>
-                    <!-- Hier können weitere interne Seiten verlinkt werden -->
-                    <a href="#archives" class="nav-link">📁 Archive</a>
+                    <button class="nav-btn active" data-tab="feed-tab">
+                        <i class="fa-solid fa-rss"></i> Terminal Feed
+                    </button>
+                    <button class="nav-btn" data-tab="admin-tab">
+                        <i class="fa-solid fa-user-shield"></i> Admin Terminal
+                    </button>
+                    <button class="nav-btn" data-tab="tools-tab">
+                        <i class="fa-solid fa-toolbox"></i> System Tools
+                    </button>
                 </nav>
             </div>
 
+            <!-- Digitaler Besuchszähler in der Sidebar -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">BESUCHSZÄHLER</h3>
+                <div class="counter-box">
+                    <div class="counter-number" id="sidebar-visit-count">000000</div>
+                    <p class="counter-label">GESAMT-ZUGRIFFE</p>
+                </div>
+            </div>
+
+            <!-- Modulare Cyber Tools Quicklinks -->
             <div class="sidebar-section">
                 <h3 class="sidebar-title">CYBER TOOLS</h3>
                 <ul class="tools-list">
-                    <!-- Modular erweiterbare Tool-Links -->
-                    <li><a href="https://github.com" target="_blank" class="tool-link">⚡ GitHub Repository</a></li>
-                    <li><a href="#" class="tool-link" onclick="alert('Tool 1 gestartet...')">🛠️ System Diagnostic</a></li>
-                    <li><a href="#" class="tool-link" onclick="alert('Tool 2 gestartet...')">🔐 Hash Generator</a></li>
+                    <li><a href="https://github.com" target="_blank" class="tool-link"><i class="fa-brands fa-github"></i> GitHub Repo</a></li>
+                    <li><a href="#" class="tool-link" id="quick-diag-btn"><i class="fa-solid fa-microchip"></i> Quick Diag</a></li>
                 </ul>
             </div>
 
+            <!-- System Info Box -->
             <div class="sidebar-section system-info-box">
-                <h3 class="sidebar-title">SYSTEM INFO</h3>
-                <p>Security Level: <strong>Alpha</strong></p>
-                <p>Core Node: <strong>Active</strong></p>
+                <h3 class="sidebar-title">NODE DETAILS</h3>
+                <p><i class="fa-solid fa-lock" style="color:var(--neon-pink)"></i> Security: <strong>Level Alpha</strong></p>
+                <p><i class="fa-solid fa-server" style="color:var(--neon-cyan)"></i> Core Node: <strong>Active</strong></p>
             </div>
         </aside>
 
-        <!-- Hauptbereich / Nachrichten-Board -->
+        <!-- Hauptbereich / Tab Inhaltsbereiche -->
         <main class="cyber-main">
-            
-            <!-- Nachrichten Eingabe-Formular -->
-            <section class="cyber-card">
-                <h2 class="card-title">NEUE NACHRICHT ÜBERMITTELN</h2>
-                <form id="message-form" class="cyber-form">
-                    <div class="form-group">
-                        <label for="author-input">SENDER / SENDERIN</label>
-                        <input type="text" id="author-input" class="cyber-input" placeholder="z.B. Master Guardian" required>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="message-input">NACHRICHTEN CONTENT</label>
-                        <textarea id="message-input" class="cyber-textarea" rows="4" placeholder="Verschlüsselte Nachricht hier eingeben..." required></textarea>
+            <!-- TAB 1: TERMINAL FEED (Öffentlich - Nur Leseansicht) -->
+            <section id="feed-tab" class="tab-content active">
+                <div class="cyber-card">
+                    <h2 class="card-title"><i class="fa-solid fa-terminal"></i> LIVE TERMINAL FEED</h2>
+                    <p class="card-description">
+                        Offizielle Mitteilungen von <strong>DerRedGuardian Industries®</strong>. Nur verifizierte Admins können Beiträge veröffentlichen.
+                    </p>
+                    <div id="public-feed-container" class="messages-container">
+                        <!-- Posts werden dynamisch über app.js hier gerendert -->
                     </div>
-
-                    <button type="submit" class="cyber-button">
-                        <span class="button-glitch"></span>
-                        <span class="button-text">NACHRICHT SENDEN [SEND]</span>
-                    </button>
-                </form>
+                </div>
             </section>
 
-            <!-- Nachrichten Display / Feed -->
-            <section class="cyber-card">
-                <div class="feed-header">
-                    <h2 class="card-title">LIVE TERMINAL FEED</h2>
-                    <button id="clear-feed-btn" class="cyber-button-danger">FEED LEEREN</button>
+            <!-- TAB 2: ADMIN TERMINAL (Geschützt durch PIN & Login) -->
+            <section id="admin-tab" class="tab-content">
+                
+                <!-- Admin Authentifizierung (Anzeige wenn nicht eingeloggt) -->
+                <div id="admin-login-view" class="cyber-card">
+                    <h2 class="card-title"><i class="fa-solid fa-key"></i> ADMIN AUTHENTIFIZIERUNG</h2>
+                    <form id="admin-login-form" class="cyber-form">
+                        <div class="form-group">
+                            <label for="login-admin-select">ADMIN-BENUTZER WÄHLEN</label>
+                            <select id="login-admin-select" class="cyber-select" required>
+                                <!-- Admins werden dynamisch geladen -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-pin-input">ADMIN PIN-CODE</label>
+                            <input type="password" id="login-pin-input" class="cyber-input" placeholder="Master PIN: 2026" required>
+                        </div>
+                        <button type="submit" class="cyber-button">
+                            <i class="fa-solid fa-unlock"></i> INS TERMINAL EINLOGGEN
+                        </button>
+                    </form>
                 </div>
-                <div id="messages-container" class="messages-container">
-                    <!-- Nachrichten werden hier dynamisch per JavaScript eingefügt -->
+
+                <!-- Admin Dashboard (Anzeige wenn erfolgreich eingeloggt) -->
+                <div id="admin-dashboard-view" class="admin-dashboard">
+                    
+                    <!-- Admin Control Status-Bar -->
+                    <div class="admin-status-bar">
+                        <div>
+                            <span class="status-label"><i class="fa-solid fa-user-astronaut"></i> EINGELOGGT ALS:</span> 
+                            <span id="current-admin-name" class="status-admin-name">-</span>
+                        </div>
+                        <button id="admin-logout-btn" class="cyber-button cyber-button-danger">
+                            <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+                        </button>
+                    </div>
+
+                    <!-- Editor Formular: Beiträge erstellen & bearbeiten -->
+                    <div class="cyber-card">
+                        <h2 class="card-title" id="editor-title"><i class="fa-solid fa-pen-to-square"></i> NEUEN BEITRAG ERSTELLEN</h2>
+                        <form id="post-editor-form" class="cyber-form">
+                            <input type="hidden" id="editing-post-id" value="">
+                            
+                            <div class="form-group">
+                                <label for="post-title-input">BEITRAGS-ÜBERSCHRIFT</label>
+                                <input type="text" id="post-title-input" class="cyber-input" placeholder="z.B. System Update v2.4" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="post-content-input">NACHRICHTEN CONTENT</label>
+                                <textarea id="post-content-input" class="cyber-textarea" rows="5" placeholder="Verfasse deine Nachricht hier..." required></textarea>
+                            </div>
+
+                            <!-- Bild-Optionen (Upload oder Web-URL) -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="post-image-file">BILD HOCHLADEN (DATEI)</label>
+                                    <input type="file" id="post-image-file" class="cyber-input" accept="image/*">
+                                </div>
+                                <div class="form-group">
+                                    <label for="post-image-url">ODER BILD URL</label>
+                                    <input type="url" id="post-image-url" class="cyber-input" placeholder="https://...">
+                                </div>
+                            </div>
+
+                            <!-- Live-Vorschau des ausgewählten Bildes -->
+                            <div class="image-preview-box" id="image-preview-box">
+                                <label class="preview-label">BILD VORSCHAU:</label><br>
+                                <img id="preview-img-element" src="" alt="Vorschau" class="preview-image">
+                            </div>
+
+                            <div class="button-group">
+                                <button type="submit" class="cyber-button" id="save-post-btn">
+                                    <i class="fa-solid fa-paper-plane"></i> VERÖFFENTLICHEN
+                                </button>
+                                <button type="button" class="cyber-button cyber-button-secondary" id="cancel-edit-btn" style="display: none;">
+                                    ABBRECHEN
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Beiträge Verwalten (Bearbeiten & Löschen) -->
+                    <div class="cyber-card">
+                        <h2 class="card-title"><i class="fa-solid fa-list-check"></i> BEITRÄGE BEARBEITEN / LÖSCHEN</h2>
+                        <div id="admin-posts-manage-list">
+                            <!-- Dynamische Liste der verwalbaren Nachrichten -->
+                        </div>
+                    </div>
+
+                    <!-- Weitere Admins festlegen -->
+                    <div class="cyber-card">
+                        <h2 class="card-title"><i class="fa-solid fa-user-plus"></i> NEUEN ADMIN HINZUFÜGEN</h2>
+                        <form id="add-admin-form" class="cyber-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="new-admin-name">ADMIN NAME</label>
+                                    <input type="text" id="new-admin-name" class="cyber-input" placeholder="z.B. Guardian_Zero" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-admin-pin">ADMIN PIN (MIN. 4 ZEICHEN)</label>
+                                    <input type="password" id="new-admin-pin" class="cyber-input" placeholder="****" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="cyber-button cyber-button-secondary">
+                                <i class="fa-solid fa-user-shield"></i> ADMIN ANLEGEN
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- TAB 3: SYSTEM TOOLS (Erweiterbar) -->
+            <section id="tools-tab" class="tab-content">
+                <div class="cyber-card">
+                    <h2 class="card-title"><i class="fa-solid fa-toolbox"></i> CYBERPUNK TOOLKIT</h2>
+                    <p class="card-description">Modulare Hilfswerkzeuge für DerRedGuardian Industries®:</p>
+                    <div class="tools-grid">
+                        <a href="https://github.com" target="_blank" class="cyber-button cyber-button-secondary" style="text-decoration:none;">
+                            <i class="fa-brands fa-github"></i> GitHub Repository
+                        </a>
+                        <button class="cyber-button cyber-button-secondary" id="system-diag-btn">
+                            <i class="fa-solid fa-microchip"></i> System-Diagnose
+                        </button>
+                        <button class="cyber-button cyber-button-secondary" id="hash-gen-btn">
+                            <i class="fa-solid fa-key"></i> Hash Generator
+                        </button>
+                    </div>
                 </div>
             </section>
 
         </main>
     </div>
 
+    <!-- Footer Bereich -->
     <footer class="cyber-footer">
-        <p>© 2026 DerRedGuardian Industries®. Alle Rechte vorbehalten. | Dark Purple Cyberpunk Node</p>
+        <p>© 2026 DerRedGuardian Industries®. Alle Rechte vorbehalten. | Dark Purple Cyber Engine Node</p>
     </footer>
 
+    <!-- Externe JavaScript-Datei -->
     <script src="app.js"></script>
 </body>
 </html>
