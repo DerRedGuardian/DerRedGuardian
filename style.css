@@ -1,0 +1,334 @@
+/* ==========================================================================
+   DERREDGUARDIAN INDUSTRIES® - PURPLE CYBERPUNK THEME
+   Modulares CSS mit zentralen Farbvariablen für einfache Anpassung
+   ========================================================================== */
+
+:root {
+    /* Hauptfarben Dark Purple Cyberpunk */
+    --bg-dark: #0a0412;
+    --bg-card: #150926;
+    --bg-card-hover: #1f0d38;
+    
+    /* Akzentfarben (Neon Purple, Magenta, Cyan) */
+    --primary-purple: #9d4edd;
+    --neon-pink: #f72585;
+    --neon-purple: #c77dff;
+    --neon-cyan: #4cc9f0;
+    
+    /* Text-Farben */
+    --text-main: #e0aaff;
+    --text-bright: #ffffff;
+    --text-dim: #7b2cbf;
+    
+    /* Layout & Effekte */
+    --border-purple: #5a189a;
+    --glow-purple: 0 0 12px rgba(157, 78, 221, 0.6);
+    --glow-pink: 0 0 15px rgba(247, 37, 133, 0.7);
+    --font-heading: 'Orbitron', sans-serif;
+    --font-body: 'Rajdhani', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Subtiler Cyberpunk Scanline Effekt */
+.scanlines {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+/* Header Styling */
+.cyber-header {
+    background: var(--bg-card);
+    border-bottom: 2px solid var(--primary-purple);
+    box-shadow: var(--glow-purple);
+    padding: 20px;
+    text-align: center;
+}
+
+.glitch-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    color: var(--text-bright);
+    text-shadow: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-pink);
+    letter-spacing: 2px;
+}
+
+.system-status {
+    margin-top: 5px;
+    font-size: 0.9rem;
+    color: var(--neon-cyan);
+    letter-spacing: 1px;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: var(--neon-cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--neon-cyan);
+    margin-right: 6px;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Haupt-Grid Layout */
+.cyber-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    max-width: 1400px;
+    width: 95%;
+    margin: 30px auto;
+    flex: 1;
+}
+
+/* Sidebar Styling */
+.cyber-sidebar {
+    background: var(--bg-card);
+    border: 1px solid var(--border-purple);
+    padding: 20px;
+    box-shadow: var(--glow-purple);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+}
+
+.sidebar-section {
+    margin-bottom: 25px;
+}
+
+.sidebar-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    color: var(--neon-pink);
+    border-bottom: 1px solid var(--border-purple);
+    padding-bottom: 5px;
+    margin-bottom: 12px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nav-link, .tool-link {
+    color: var(--text-main);
+    text-decoration: none;
+    padding: 8px 12px;
+    background: rgba(157, 78, 221, 0.1);
+    border-left: 3px solid var(--border-purple);
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.nav-link:hover, .tool-link:hover, .nav-link.active {
+    background: rgba(247, 37, 133, 0.2);
+    border-left-color: var(--neon-pink);
+    color: var(--text-bright);
+    box-shadow: var(--glow-pink);
+    transform: translateX(4px);
+}
+
+.tools-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.system-info-box p {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+/* Main Content & Cards */
+.cyber-main {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.cyber-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-purple);
+    padding: 25px;
+    box-shadow: var(--glow-purple);
+    position: relative;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+}
+
+.card-title {
+    font-family: var(--font-heading);
+    color: var(--neon-purple);
+    margin-bottom: 18px;
+    font-size: 1.3rem;
+    letter-spacing: 1px;
+}
+
+/* Form Styling */
+.cyber-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-family: var(--font-heading);
+    color: var(--neon-cyan);
+}
+
+.cyber-input, .cyber-textarea {
+    background: rgba(10, 4, 18, 0.8);
+    border: 1px solid var(--border-purple);
+    color: var(--text-bright);
+    padding: 12px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cyber-input:focus, .cyber-textarea:focus {
+    border-color: var(--neon-pink);
+    box-shadow: var(--glow-pink);
+}
+
+.cyber-button {
+    background: var(--primary-purple);
+    color: var(--text-bright);
+    border: none;
+    padding: 12px 20px;
+    font-family: var(--font-heading);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    box-shadow: var(--glow-purple);
+}
+
+.cyber-button:hover {
+    background: var(--neon-pink);
+    box-shadow: var(--glow-pink);
+    transform: translateY(-2px);
+}
+
+.cyber-button-danger {
+    background: transparent;
+    border: 1px solid var(--neon-pink);
+    color: var(--neon-pink);
+    padding: 5px 10px;
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cyber-button-danger:hover {
+    background: var(--neon-pink);
+    color: var(--text-bright);
+    box-shadow: var(--glow-pink);
+}
+
+/* Feed Headers & Post Message Cards */
+.feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.messages-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.message-item {
+    background: var(--bg-card-hover);
+    border-left: 4px solid var(--neon-purple);
+    padding: 15px;
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.message-item:hover {
+    transform: translateX(5px);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--neon-cyan);
+    margin-bottom: 8px;
+    border-bottom: 1px dashed rgba(157, 78, 221, 0.3);
+    padding-bottom: 4px;
+}
+
+.message-author {
+    font-weight: bold;
+    color: var(--neon-pink);
+}
+
+.message-body {
+    color: var(--text-bright);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.empty-message {
+    color: var(--text-dim);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Footer Styling */
+.cyber-footer {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-purple);
+    text-align: center;
+    padding: 15px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: auto;
+}
+
+/* Responsive Handling */
+@media (max-width: 850px) {
+    .cyber-grid {
+        grid-template-columns: 1fr;
+    }
+}
