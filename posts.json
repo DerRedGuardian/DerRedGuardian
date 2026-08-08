@@ -1,13 +1,5 @@
 [
   {
-    "id": 1786208922997,
-    "title": "Test Message",
-    "author": "Admin",
-    "content": "Moinsen Das ist ein Test.",
-    "imageUrl": "https://wieck-mbusa-production.s3.amazonaws.com/photos/b55e4630529a2b21d833592b60ea08f5a04dc1d6/preview-928x522.jpg",
-    "timestamp": "[2026-08-08 // 19:08]"
-  },
-  {
     "id": 1786207212743,
     "title": "Test Nachricht",
     "author": "Admin",
