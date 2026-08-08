@@ -2,94 +2,103 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>DerRedGuardian - Hub</title>
-    <style>
-        :root {
-            --bg-color: #0b0d12;
-            --panel-bg: rgba(20, 24, 35, 0.85);
-            --panel-border: #1e2638;
-            --accent-cyan: #00f0ff;
-            --text-main: #f0f4f8;
-            --text-muted: #8a99ad;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Rajdhani', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .hub-container {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 40px;
-            width: 400px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: var(--accent-cyan);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-bottom: 25px;
-        }
-
-        .link-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .hub-link {
-            display: block;
-            background: rgba(0, 240, 255, 0.05);
-            border: 1px solid rgba(0, 240, 255, 0.2);
-            color: var(--text-main);
-            text-decoration: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-        }
-
-        .hub-link:hover {
-            background: rgba(0, 240, 255, 0.15);
-            border-color: var(--accent-cyan);
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DerRedGuardian Industries®</title>
+    <!-- Modern Cyberpunk Font Family -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="hub-container">
-        <h1>DerRedGuardian</h1>
-        <p>Projekt-Übersicht & Dashboards</p>
-        
-        <div class="link-list">
-            <a href="https://khi-drg-serverpc3.derredguardian.de/mainpage" class="hub-link">
-                Trailmakers Grand Prix
-            </a>
-            <!-- Hier kannst du weitere Links einbauen -->
+    <!-- Cyberpunk Scanline Effect Overlay -->
+    <div class="scanlines"></div>
+
+    <!-- Header / Branding Bereich -->
+    <header class="cyber-header">
+        <div class="header-content">
+            <h1 class="glitch-title" data-text="DerRedGuardian Industries®">DerRedGuardian Industries®</h1>
+            <div class="system-status">
+                <span class="status-indicator"></span>
+                <span class="status-text">SYSTEM STATUS: ONLINE // PROTOCOL 2026</span>
+            </div>
         </div>
+    </header>
+
+    <!-- Main Container mit Grid Layout -->
+    <div class="cyber-grid">
+
+        <!-- Sidebar / Modulare Navigation & Tools -->
+        <aside class="cyber-sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">NAVIGATION</h3>
+                <nav class="sidebar-nav">
+                    <a href="#feed" class="nav-link active">📡 Terminal Feed</a>
+                    <!-- Hier können weitere interne Seiten verlinkt werden -->
+                    <a href="#archives" class="nav-link">📁 Archive</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">CYBER TOOLS</h3>
+                <ul class="tools-list">
+                    <!-- Modular erweiterbare Tool-Links -->
+                    <li><a href="https://github.com" target="_blank" class="tool-link">⚡ GitHub Repository</a></li>
+                    <li><a href="#" class="tool-link" onclick="alert('Tool 1 gestartet...')">🛠️ System Diagnostic</a></li>
+                    <li><a href="#" class="tool-link" onclick="alert('Tool 2 gestartet...')">🔐 Hash Generator</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section system-info-box">
+                <h3 class="sidebar-title">SYSTEM INFO</h3>
+                <p>Security Level: <strong>Alpha</strong></p>
+                <p>Core Node: <strong>Active</strong></p>
+            </div>
+        </aside>
+
+        <!-- Hauptbereich / Nachrichten-Board -->
+        <main class="cyber-main">
+            
+            <!-- Nachrichten Eingabe-Formular -->
+            <section class="cyber-card">
+                <h2 class="card-title">NEUE NACHRICHT ÜBERMITTELN</h2>
+                <form id="message-form" class="cyber-form">
+                    <div class="form-group">
+                        <label for="author-input">SENDER / SENDERIN</label>
+                        <input type="text" id="author-input" class="cyber-input" placeholder="z.B. Master Guardian" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message-input">NACHRICHTEN CONTENT</label>
+                        <textarea id="message-input" class="cyber-textarea" rows="4" placeholder="Verschlüsselte Nachricht hier eingeben..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="cyber-button">
+                        <span class="button-glitch"></span>
+                        <span class="button-text">NACHRICHT SENDEN [SEND]</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Nachrichten Display / Feed -->
+            <section class="cyber-card">
+                <div class="feed-header">
+                    <h2 class="card-title">LIVE TERMINAL FEED</h2>
+                    <button id="clear-feed-btn" class="cyber-button-danger">FEED LEEREN</button>
+                </div>
+                <div id="messages-container" class="messages-container">
+                    <!-- Nachrichten werden hier dynamisch per JavaScript eingefügt -->
+                </div>
+            </section>
+
+        </main>
     </div>
 
+    <footer class="cyber-footer">
+        <p>© 2026 DerRedGuardian Industries®. Alle Rechte vorbehalten. | Dark Purple Cyberpunk Node</p>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
 </html>
