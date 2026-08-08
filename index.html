@@ -47,7 +47,7 @@
                         <i class="fa-solid fa-rss"></i> Terminal Feed
                     </button>
                     <button class="nav-btn" data-tab="admin-tab">
-                        <i class="fa-solid fa-user-shield"></i> Admin Terminal
+                        <i class="fa-solid fa-user-shield"></i> Employee Terminal
                     </button>
                     <button class="nav-btn" data-tab="tools-tab">
                         <i class="fa-solid fa-toolbox"></i> System Tools
@@ -57,7 +57,7 @@
 
             <!-- Digitaler Besuchszähler in der Sidebar -->
             <div class="sidebar-section">
-                <h3 class="sidebar-title">BESUCHSZÄHLER</h3>
+                <h3 class="sidebar-title">Link Counter</h3>
                 <div class="counter-box">
                     <div class="counter-number" id="sidebar-visit-count">000000</div>
                     <p class="counter-label">GESAMT-ZUGRIFFE</p>
@@ -68,7 +68,7 @@
             <div class="sidebar-section">
                 <h3 class="sidebar-title">CYBER TOOLS</h3>
                 <ul class="tools-list">
-                    <li><a href="https://github.com" target="_blank" class="tool-link"><i class="fa-brands fa-github"></i> GitHub Repo</a></li>
+                    <li><a href="https://khi-drg-serverpc3.derredguardian.de" target="_blank" class="tool-link"><i class="fa-brands fa-github"></i> Allstars Racing League<br>Trailmakers Grand Prix</a></li>
                     <li><a href="#" class="tool-link" id="quick-diag-btn"><i class="fa-solid fa-microchip"></i> Quick Diag</a></li>
                 </ul>
             </div>
@@ -89,7 +89,7 @@
                 <div class="cyber-card">
                     <h2 class="card-title"><i class="fa-solid fa-terminal"></i> LIVE TERMINAL FEED</h2>
                     <p class="card-description">
-                        Offizielle Mitteilungen von <strong>DerRedGuardian Industries®</strong>. Nur verifizierte Admins können Beiträge veröffentlichen.
+                        Offizielle Mitteilungen von <strong>DerRedGuardian Industries®</strong>. Nur verifizierte Employees können Beiträge veröffentlichen.
                     </p>
                     <div id="public-feed-container" class="messages-container">
                         <!-- Posts werden dynamisch über app.js hier gerendert -->
@@ -102,17 +102,17 @@
                 
                 <!-- Admin Authentifizierung (Anzeige wenn nicht eingeloggt) -->
                 <div id="admin-login-view" class="cyber-card">
-                    <h2 class="card-title"><i class="fa-solid fa-key"></i> ADMIN AUTHENTIFIZIERUNG</h2>
+                    <h2 class="card-title"><i class="fa-solid fa-key"></i> EMPLOYEE AUTHENTIFIZIERUNG</h2>
                     <form id="admin-login-form" class="cyber-form">
                         <div class="form-group">
-                            <label for="login-admin-select">ADMIN-BENUTZER WÄHLEN</label>
+                            <label for="login-admin-select">EMPLOYEE WÄHLEN</label>
                             <select id="login-admin-select" class="cyber-select" required>
                                 <!-- Admins werden dynamisch geladen -->
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="login-pin-input">ADMIN PIN-CODE</label>
-                            <input type="password" id="login-pin-input" class="cyber-input" placeholder="Master PIN: 2026" required>
+                            <label for="login-pin-input">EMPLOYEE PIN-CODE</label>
+                            <input type="password" id="login-pin-input" class="cyber-input" placeholder="Pass Key:" required>
                         </div>
                         <button type="submit" class="cyber-button">
                             <i class="fa-solid fa-unlock"></i> INS TERMINAL EINLOGGEN
@@ -189,20 +189,20 @@
 
                     <!-- Weitere Admins festlegen -->
                     <div class="cyber-card">
-                        <h2 class="card-title"><i class="fa-solid fa-user-plus"></i> NEUEN ADMIN HINZUFÜGEN</h2>
+                        <h2 class="card-title"><i class="fa-solid fa-user-plus"></i> NEUEN EMPLOYEE HINZUFÜGEN</h2>
                         <form id="add-admin-form" class="cyber-form">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="new-admin-name">ADMIN NAME</label>
+                                    <label for="new-admin-name">EMPLOYEE NAME</label>
                                     <input type="text" id="new-admin-name" class="cyber-input" placeholder="z.B. Guardian_Zero" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="new-admin-pin">ADMIN PIN (MIN. 4 ZEICHEN)</label>
+                                    <label for="new-admin-pin">EMPLOYEE PIN (MIN. 4 ZEICHEN)</label>
                                     <input type="password" id="new-admin-pin" class="cyber-input" placeholder="****" required>
                                 </div>
                             </div>
                             <button type="submit" class="cyber-button cyber-button-secondary">
-                                <i class="fa-solid fa-user-shield"></i> ADMIN ANLEGEN
+                                <i class="fa-solid fa-user-shield"></i> EMPLOYEE ANLEGEN
                             </button>
                         </form>
                     </div>
