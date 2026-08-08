@@ -1,8 +1,8 @@
 /**
  * ==========================================================================
  * DERREDGUARDIAN INDUSTRIES® - CORE APP CONTROLLER
- * Modular aufgebautes JavaScript für Tab-Steuerung, Besuchszähler,
- * Admin-Authentifizierung sowie Beitrags- & Bilderverwaltung.
+ * Modular aufgebautes JavaScript für Tab-Steuerung, globalen Besuchszähler,
+ * Admin-Authentifizierung sowie GitHub-API Beitrags- & Bilderverwaltung.
  * ==========================================================================
  */
 
@@ -12,32 +12,71 @@ const DRGApp = (() => {
     const STORAGE_POSTS = 'DRG_Posts_V2';
     const STORAGE_ADMINS = 'DRG_Admins_V2';
     const STORAGE_VISITS = 'DRG_VisitCounter_V2';
+    const STORAGE_GH_TOKEN = 'DRG_GH_TOKEN';
     const SESSION_VISIT_KEY = 'DRG_Visited_Session';
+
+    // GitHub Repository Konfiguration
+    const GH_OWNER = 'DerRedGuardian';
+    const GH_REPO = 'DerRedGuardian';
+    const GH_BRANCH = 'main';
+    const GH_FILE_PATH = 'posts.json';
 
     // Zustandsschlüssel (State)
     let currentAdmin = null;
     let currentPostImageData = '';
+    let cachedPosts = null;
+    let cachedSha = null;
 
     /* ==========================================================================
-       1. BESUCHSZÄHLER (USER COUNTER MODULE)
+       1. BESUCHSZÄHLER (USER COUNTER MODULE - GLOBAL VIA API)
        ========================================================================== */
-    const initVisitorCounter = () => {
-        let visits = parseInt(localStorage.getItem(STORAGE_VISITS)) || 0; // Start-Basiswert
-        
-        // Zähle bei neuem Aufruf in einer neuen Browser-Sitzung hoch
-        if (!sessionStorage.getItem(SESSION_VISIT_KEY)) {
-            visits++;
-            localStorage.setItem(STORAGE_VISITS, visits);
-            sessionStorage.setItem(SESSION_VISIT_KEY, 'true');
-        }
-
-        // Zahl mit führenden Nullen formatieren (z.B. 001481)
-        const formatted = String(visits).padStart(6, '0');
+    /**
+     * Initialisiert den globalen Besuchszähler.
+     * Zählt bei einer neuen Browser-Sitzung über die REST-API hoch
+     * und formatiert die Zahl für Header und Sidebar auf 6 Stellen.
+     */
+    const initVisitorCounter = async () => {
         const headerCounter = document.getElementById('header-visit-count');
         const sidebarCounter = document.getElementById('sidebar-visit-count');
 
-        if (headerCounter) headerCounter.textContent = formatted;
-        if (sidebarCounter) sidebarCounter.textContent = formatted;
+        const updateDisplays = (num) => {
+            const formatted = String(num).padStart(6, '0');
+            if (headerCounter) headerCounter.textContent = formatted;
+            if (sidebarCounter) sidebarCounter.textContent = formatted;
+        };
+
+        let localVisits = parseInt(localStorage.getItem(STORAGE_VISITS), 10) || 0;
+
+        try {
+            const isNewSession = !sessionStorage.getItem(SESSION_VISIT_KEY);
+            // Nutze /up zum Hochzählen bei neuer Session, sonst reines Auslesen
+            const endpoint = isNewSession
+                ? 'https://api.counterapi.dev/v1/derredguardian_industries/visits/up'
+                : 'https://api.counterapi.dev/v1/derredguardian_industries/visits';
+
+            const response = await fetch(endpoint);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && typeof data.count === 'number') {
+                    if (isNewSession) {
+                        sessionStorage.setItem(SESSION_VISIT_KEY, 'true');
+                    }
+                    localStorage.setItem(STORAGE_VISITS, data.count);
+                    updateDisplays(data.count);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.warn('Global Counter API offline, schalte auf LocalStorage Fallback:', error);
+        }
+
+        // Fallback für reine Offline-Verwendung
+        if (!sessionStorage.getItem(SESSION_VISIT_KEY)) {
+            localVisits++;
+            localStorage.setItem(STORAGE_VISITS, localVisits);
+            sessionStorage.setItem(SESSION_VISIT_KEY, 'true');
+        }
+        updateDisplays(localVisits);
     };
 
     /* ==========================================================================
@@ -76,7 +115,7 @@ const DRGApp = (() => {
     /**
      * Login-Prüfung durchführen.
      */
-    const handleAdminLogin = (e) => {
+    const handleAdminLogin = async (e) => {
         e.preventDefault();
         const selectedUser = document.getElementById('login-admin-select').value;
         const enteredPin = document.getElementById('login-pin-input').value;
@@ -91,8 +130,8 @@ const DRGApp = (() => {
             document.getElementById('admin-dashboard-view').style.display = 'flex';
             document.getElementById('current-admin-name').textContent = currentAdmin;
             
-            // Verwalbare Liste rendern
-            renderAdminPostsManagementList();
+            renderGitHubTokenConfigCard();
+            await renderAdminPostsManagementList();
         } else {
             alert('FEHLER: Falscher PIN-Code für diesen Admin!');
         }
@@ -134,36 +173,247 @@ const DRGApp = (() => {
         renderAdminSelectOptions();
     };
 
+    /**
+     * Rendert eine GitHub Token Konfigurationskarte im Admin Dashboard.
+     */
+    const renderGitHubTokenConfigCard = () => {
+        const dashboard = document.getElementById('admin-dashboard-view');
+        if (!dashboard) return;
+
+        let tokenCard = document.getElementById('github-token-config-card');
+        if (!tokenCard) {
+            tokenCard = document.createElement('div');
+            tokenCard.id = 'github-token-config-card';
+            tokenCard.className = 'cyber-card';
+            tokenCard.style.marginTop = '20px';
+            dashboard.appendChild(tokenCard);
+        }
+
+        const currentToken = localStorage.getItem(STORAGE_GH_TOKEN) || '';
+        const maskedToken = currentToken
+            ? (currentToken.substring(0, 4) + '****************' + currentToken.slice(-4))
+            : 'KEIN TOKEN GESPEICHERT';
+
+        tokenCard.innerHTML = `
+            <h2 class="card-title"><i class="fa-brands fa-github"></i> GITHUB API TOKEN KONFIGURATION</h2>
+            <div class="cyber-form">
+                <div class="form-group">
+                    <label>AKTUELLER TOKEN-STATUS</label>
+                    <input type="text" class="cyber-input" value="${maskedToken}" disabled style="opacity: 0.7;">
+                </div>
+                <div class="form-group">
+                    <label for="gh-token-input">NEUEN GITHUB PERSONAL ACCESS TOKEN (PAT) EINGEBEN</label>
+                    <input type="password" id="gh-token-input" class="cyber-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div class="button-group">
+                    <button type="button" class="cyber-button" id="save-gh-token-btn">
+                        <i class="fa-solid fa-floppy-disk"></i> TOKEN SPEICHERN
+                    </button>
+                    ${currentToken ? `
+                    <button type="button" class="cyber-button cyber-button-danger" id="clear-gh-token-btn">
+                        <i class="fa-solid fa-trash"></i> TOKEN LÖSCHEN
+                    </button>` : ''}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('save-gh-token-btn')?.addEventListener('click', () => {
+            const newToken = document.getElementById('gh-token-input').value.trim();
+            if (newToken) {
+                localStorage.setItem(STORAGE_GH_TOKEN, newToken);
+                alert('GitHub Access Token wurde erfolgreich im lokalen Terminal-Speicher gesichert!');
+                renderGitHubTokenConfigCard();
+            } else {
+                alert('Bitte einen gültigen GitHub Token eingeben.');
+            }
+        });
+
+        document.getElementById('clear-gh-token-btn')?.addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_GH_TOKEN);
+            alert('GitHub Access Token entfernt.');
+            renderGitHubTokenConfigCard();
+        });
+    };
+
     /* ==========================================================================
-       3. POSTS / NACHRICHTEN & BILDER MANAGEMENT
+       3. POSTS / NACHRICHTEN & GITHUB REST-API MANAGEMENT
        ========================================================================== */
     /**
-     * Ruft alle Posts ab.
+     * Ruft alle Posts synchronisiert von GitHub API ab (mit lokalen Fallbacks).
      */
-    const getPosts = () => {
+    const getPosts = async () => {
+        if (cachedPosts) return cachedPosts;
+
+        // 1. Abruf direkt über GitHub REST API
+        try {
+            const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE_PATH}?ref=${GH_BRANCH}`;
+            const response = await fetch(apiUrl, { cache: 'no-store' });
+
+            if (response.ok) {
+                const data = await response.json();
+                cachedSha = data.sha;
+
+                // Saubere UTF-8 Base64 Decodierung
+                const base64Clean = data.content.replace(/\s/g, '');
+                const binaryString = atob(base64Clean);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const decodedText = new TextDecoder().decode(bytes);
+                const parsedPosts = JSON.parse(decodedText);
+
+                if (Array.isArray(parsedPosts)) {
+                    cachedPosts = parsedPosts;
+                    localStorage.setItem(STORAGE_POSTS, JSON.stringify(parsedPosts));
+                    return cachedPosts;
+                }
+            }
+        } catch (err) {
+            console.warn('GitHub API Fetch fehlgeschlagen, versuche lokalen Fallback:', err);
+        }
+
+        // 2. Fallback: Lokale posts.json Datei
+        try {
+            const localRes = await fetch('./posts.json?t=' + Date.now());
+            if (localRes.ok) {
+                const parsedPosts = await localRes.json();
+                if (Array.isArray(parsedPosts) && parsedPosts.length > 0) {
+                    cachedPosts = parsedPosts;
+                    localStorage.setItem(STORAGE_POSTS, JSON.stringify(parsedPosts));
+                    return cachedPosts;
+                }
+            }
+        } catch (err) {
+            console.warn('Lokaler posts.json Fetch fehlgeschlagen:', err);
+        }
+
+        // 3. Fallback: LocalStorage
         const stored = localStorage.getItem(STORAGE_POSTS);
-        if (stored) return JSON.parse(stored);
-        
-        // Erstbeitrag als Beispiel
+        if (stored) {
+            try {
+                cachedPosts = JSON.parse(stored);
+                return cachedPosts;
+            } catch (e) {}
+        }
+
+        // Standard Erstbeitrag
         const initialPosts = [{
             id: 1,
             title: 'Willkommen bei DerRedGuardian Industries®',
             author: 'MasterGuardian',
-            content: 'Das neue modulare Cyberpunk Terminal System ist nun online. Im Admin-Tab können verifizierte Admins neue Beiträge mit Bildern verfassen, bearbeiten oder verwalten.',
+            content: 'Das neue modulare Cyberpunk Terminal System ist nun online. Im Admin-Tab können verifizierte Employees neue Beiträge mit Bildern verfassen, bearbeiten oder verwalten.',
             imageUrl: '',
             timestamp: '[2026-08-08 // 12:00]'
         }];
+        cachedPosts = initialPosts;
         localStorage.setItem(STORAGE_POSTS, JSON.stringify(initialPosts));
-        return initialPosts;
+        return cachedPosts;
     };
 
     /**
-     * Speichert die Posts im Storage und aktualisiert die Anzeigen.
+     * Speichert die Beiträge auf GitHub über die Contents API.
      */
-    const savePosts = (posts) => {
+    const savePostsToGitHub = async (posts) => {
+        let token = localStorage.getItem(STORAGE_GH_TOKEN);
+        if (!token) {
+            token = prompt('GITHUB PERSONAL ACCESS TOKEN (PAT) BENÖTIGT:\nBitte Token eingeben, um Beiträge auf GitHub zu speichern.');
+            if (token && token.trim()) {
+                token = token.trim();
+                localStorage.setItem(STORAGE_GH_TOKEN, token);
+            } else {
+                alert('HINWEIS: Beitrag wurde lokal im Browser gesichert, konnte aber mangels GitHub Token nicht auf GitHub veröffentlicht werden.');
+                return false;
+            }
+        }
+
+        try {
+            // Aktuellen SHA ermitteln, um Konflikte zu vermeiden
+            let sha = cachedSha;
+            const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE_PATH}?ref=${GH_BRANCH}`;
+            const getRes = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                cache: 'no-store'
+            });
+
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                sha = getData.sha;
+            }
+
+            // UTF-8 zu Base64 Konvertierung für GitHub API
+            const jsonString = JSON.stringify(posts, null, 2);
+            const utf8Bytes = new TextEncoder().encode(jsonString);
+            let binaryString = '';
+            for (let i = 0; i < utf8Bytes.length; i++) {
+                binaryString += String.fromCharCode(utf8Bytes[i]);
+            }
+            const contentBase64 = btoa(binaryString);
+
+            // PUT Request zum Veröffentlichen der neuen posts.json
+            const putRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE_PATH}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: `[DRG Terminal] Update posts.json via Employee Terminal (${currentAdmin || 'Admin'})`,
+                    content: contentBase64,
+                    sha: sha,
+                    branch: GH_BRANCH
+                })
+            });
+
+            if (putRes.ok) {
+                const resultData = await putRes.json();
+                cachedSha = resultData.content.sha;
+                alert('SYSTEM UPDATE: Beitrag erfolgreich synchronisiert & auf GitHub veröffentlicht!');
+                return true;
+            } else {
+                const errData = await putRes.json();
+                if (putRes.status === 401 || putRes.status === 403) {
+                    alert('FEHLER: GitHub Access Token ungültig oder unzureichende Schreibrechte! Bitte Token prüfen.');
+                    localStorage.removeItem(STORAGE_GH_TOKEN);
+                } else {
+                    alert(`FEHLER beim GitHub API Sync: ${errData.message || 'Unbekannter Fehler'}`);
+                }
+                return false;
+            }
+        } catch (err) {
+            console.error('GitHub API Save Error:', err);
+            alert('FEHLER: Verbindung zur GitHub API fehlgeschlagen.');
+            return false;
+        }
+    };
+
+    /**
+     * Speichert die Posts im Storage & GitHub und aktualisiert die Anzeigen.
+     */
+    const savePosts = async (posts) => {
+        cachedPosts = posts;
         localStorage.setItem(STORAGE_POSTS, JSON.stringify(posts));
-        renderPublicFeed();
-        renderAdminPostsManagementList();
+
+        const saveBtn = document.getElementById('save-post-btn');
+        const originalBtnText = saveBtn ? saveBtn.innerHTML : '';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SYNCING GITHUB...';
+        }
+
+        await savePostsToGitHub(posts);
+
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+        }
+
+        await renderPublicFeed();
+        await renderAdminPostsManagementList();
     };
 
     /**
@@ -185,7 +435,7 @@ const DRGApp = (() => {
     /**
      * Beitrag Speichern (Sowohl Neuerstellung als auch Bearbeiten)
      */
-    const handleSavePost = (e) => {
+    const handleSavePost = async (e) => {
         e.preventDefault();
         const editingId = document.getElementById('editing-post-id').value;
         const title = document.getElementById('post-title-input').value.trim();
@@ -195,7 +445,7 @@ const DRGApp = (() => {
         // Bevorzugt Datei-Upload (Base64), ansonsten eingegebene URL
         const finalImage = currentPostImageData || urlImage;
 
-        const posts = getPosts();
+        let posts = await getPosts();
 
         if (editingId) {
             // Bearbeitung eines bestehenden Eintrags
@@ -220,7 +470,7 @@ const DRGApp = (() => {
             });
         }
 
-        savePosts(posts);
+        await savePosts(posts);
         resetPostForm();
     };
 
@@ -240,15 +490,15 @@ const DRGApp = (() => {
     /**
      * Bereitet einen Beitrag im Formular zum Bearbeiten vor.
      */
-    const editPost = (id) => {
-        const posts = getPosts();
+    const editPost = async (id) => {
+        const posts = await getPosts();
         const post = posts.find(p => p.id == id);
         if (!post) return;
 
         document.getElementById('editing-post-id').value = post.id;
         document.getElementById('post-title-input').value = post.title;
         document.getElementById('post-content-input').value = post.content;
-        document.getElementById('post-image-url').value = post.imageUrl.startsWith('http') ? post.imageUrl : '';
+        document.getElementById('post-image-url').value = (post.imageUrl && post.imageUrl.startsWith('http')) ? post.imageUrl : '';
 
         if (post.imageUrl) {
             currentPostImageData = post.imageUrl;
@@ -270,11 +520,11 @@ const DRGApp = (() => {
     /**
      * Löscht einen Beitrag.
      */
-    const deletePost = (id) => {
+    const deletePost = async (id) => {
         if (confirm('Soll dieser Beitrag wirklich unwiderruflich gelöscht werden?')) {
-            let posts = getPosts();
+            let posts = await getPosts();
             posts = posts.filter(p => p.id != id);
-            savePosts(posts);
+            await savePosts(posts);
         }
     };
 
@@ -284,13 +534,13 @@ const DRGApp = (() => {
     /**
      * Rendert die Beiträge im öffentlichen Feed (Hauptseite Tab 1).
      */
-    const renderPublicFeed = () => {
+    const renderPublicFeed = async () => {
         const container = document.getElementById('public-feed-container');
         if (!container) return;
 
-        const posts = getPosts();
+        const posts = await getPosts();
 
-        if (posts.length === 0) {
+        if (!posts || posts.length === 0) {
             container.innerHTML = `<p style="color:var(--text-dim); text-align:center; padding:20px;">Keine Nachrichten im Terminal verzeichnet.</p>`;
             return;
         }
@@ -305,7 +555,7 @@ const DRGApp = (() => {
                 </div>
                 <h3 class="post-title">${escapeHTML(post.title)}</h3>
                 <p class="post-content">${escapeHTML(post.content)}</p>
-                ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Post Image">` : ''}
+                ${post.imageUrl ? `<img src="${escapeHTML(post.imageUrl)}" class="post-image" alt="Post Image">` : ''}
             </article>
         `).join('');
     };
@@ -313,13 +563,13 @@ const DRGApp = (() => {
     /**
      * Rendert die Liste der Beiträge zur Verwaltung im Admin-Dashboard.
      */
-    const renderAdminPostsManagementList = () => {
+    const renderAdminPostsManagementList = async () => {
         const container = document.getElementById('admin-posts-manage-list');
         if (!container) return;
 
-        const posts = getPosts();
+        const posts = await getPosts();
 
-        if (posts.length === 0) {
+        if (!posts || posts.length === 0) {
             container.innerHTML = `<p style="color:var(--text-dim);">Keine Beiträge zum Bearbeiten vorhanden.</p>`;
             return;
         }
@@ -391,25 +641,26 @@ const DRGApp = (() => {
     /**
      * Öffentliche Initialisierungs-Methode
      */
-    const init = () => {
-        initVisitorCounter();
+    const init = async () => {
+        await initVisitorCounter();
         initTabs();
         renderAdminSelectOptions();
-        renderPublicFeed();
+        await renderPublicFeed();
         initEvents();
-        document.addEventListener('contextmenu', (e) => e.preventDefault());
 
-        // 2. F12, Strg+Shift+I, Strg+Shift+J, Strg+U sperren
+        // Security Lockouts (Kontextmenü & Shortcuts)
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
         document.addEventListener('keydown', (e) => {
-          if (
-            e.key === 'F12' ||
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) ||
-            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
-          ) {
-            e.preventDefault();
-            return false;
-          }
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) ||
+                (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+            ) {
+                e.preventDefault();
+                return false;
+            }
         });
+
         console.log('DerRedGuardian Industries® Terminal System gestartet.');
     };
 
