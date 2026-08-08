@@ -1,0 +1,14 @@
+{
+  "": [
+    {
+      "username": "Master Guardian",
+      "pin": "\\\\////",
+      "isMaster": true
+    },
+    {
+      "username": "Employee_Zero",
+      "pin": "1234",
+      "isMaster": false
+    }
+  ]
+}
