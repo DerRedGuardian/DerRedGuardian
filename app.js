@@ -655,17 +655,29 @@ const DRGApp = (() => {
     /* ==========================================================================
        4. RENDERING MODULE (PARSER & PUBLIC FEED)
        ========================================================================== */
-    const formatPostContent = (rawText) => {
+const formatPostContent = (rawText) => {
         if (!rawText) return '';
 
         let escaped = escapeHTML(rawText);
 
-        escaped = escaped.replace(/([^\n\r<]+)\.link\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, label, url) => {
+        // 1. ZUERST .link und Bild verarbeiten (inklusive intelligenter Prefix-Abspaltung für Verschachtelungen)
+        escaped = escaped.replace(/([^\n\r<]+)\.link\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, fullLabel, url) => {
+            // Logik-Upgrade: Erkennt Verschachtelungen wie RgbText("Name.link(...)")
+            // und trennt den Formatierungsbefehl sicher vom eigentlichen Linknamen ab.
+            let labelMatch = fullLabel.match(/(.*(?:&quot;|&#39;|["']|>))(.*)$/);
+            let prefix = "";
+            let label = fullLabel;
+            
+            if (labelMatch) {
+                prefix = labelMatch[1];
+                label = labelMatch[2];
+            }
+
             let href = url.trim();
             if (!href.startsWith('http://') && !href.startsWith('https://')) {
                 href = 'https://' + href;
             }
-            return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--neon-cyan, #00f3ff); font-weight:600; text-decoration:underline;"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.75rem;"></i> ${label.trim()}</a>`;
+            return `${prefix}<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--neon-cyan, #00f3ff); font-weight:600; text-decoration:underline;"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.75rem;"></i> ${label.trim()}</a>`;
         });
 
         escaped = escaped.replace(/Bild\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, url) => {
@@ -674,6 +686,55 @@ const DRGApp = (() => {
                 src = 'https://' + src;
             }
             return `<img src="${src}" style="max-width:100%; border-radius:4px; margin:10px 0; border:1px solid var(--neon-pink, #ff007f); display:block;" alt="Embedded Media">`;
+        });
+
+        // 2. NEUE FORMATIERUNGEN (Diese umschließen nun fehlerfrei reinen Text, Links oder Bilder)
+        
+        // Überschrift: Überschrift(#00f3ff, 22, "Titel")
+        escaped = escaped.replace(/Überschrift\(([^,]+),\s*(\d+)\s*,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, size, text) => {
+            return `<h2 style="color:${color.trim()}; font-size:${size.trim()}px; margin: 10px 0; text-shadow: 0 0 5px ${color.trim()};">${text}</h2>`;
+        });
+
+        // Farbe: Farbe(#ff007f, "Text")
+        escaped = escaped.replace(/Farbe\(([^,]+),\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, text) => {
+            return `<span style="color:${color.trim()};">${text}</span>`;
+        });
+
+        // Größe: Größe(18, "Text")
+        escaped = escaped.replace(/Größe\((\d+)\s*,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, size, text) => {
+            return `<span style="font-size:${size.trim()}px;">${text}</span>`;
+        });
+
+        // Fett: Fett("Text")
+        escaped = escaped.replace(/Fett\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<strong style="font-weight:bold;">${text}</strong>`;
+        });
+
+        // Unterstrichen: Unterstrichen("Text")
+        escaped = escaped.replace(/Unterstrichen\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<span style="text-decoration:underline;">${text}</span>`;
+        });
+
+        // Durchgestrichen: Durchgestrichen("Text")
+        escaped = escaped.replace(/Durchgestrichen\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<span style="text-decoration:line-through;">${text}</span>`;
+        });
+
+        // NeonGlow: NeonGlow(#00f3ff, "Text")
+        escaped = escaped.replace(/NeonGlow\(([^,]+),\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, text) => {
+            const c = color.trim();
+            return `<span style="color:#fff; text-shadow: 0 0 5px ${c}, 0 0 10px ${c}, 0 0 20px ${c};">${text}</span>`;
+        });
+
+        // RgbText: RgbText("Text")
+        escaped = escaped.replace(/RgbText\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            // Nutzt einen linearen RGB-Verlauf, der auf den Text geclippt wird
+            return `<span style="background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold;">${text}</span>`;
+        });
+
+        // Warnung: Warnung("Text")
+        escaped = escaped.replace(/Warnung\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<span style="color:var(--neon-pink, #ff007f); font-weight:bold; background:rgba(255,0,127,0.1); border-left:3px solid var(--neon-pink, #ff007f); padding:2px 6px; border-radius:2px;"><i class="fa-solid fa-triangle-exclamation"></i> ${text}</span>`;
         });
 
         return escaped.replace(/\n/g, '<br>');
