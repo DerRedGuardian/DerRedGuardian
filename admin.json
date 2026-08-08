@@ -5,6 +5,11 @@
       "username": "Master Guardian",
       "pin": "////////",
       "isMaster": true
+    },
+    {
+      "username": "K.v. Kayaba",
+      "pin": "Stahlinium",
+      "isMaster": false
     }
   ]
 }
