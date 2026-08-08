@@ -51,7 +51,7 @@ const DRGApp = (() => {
         if (stored) return JSON.parse(stored);
         
         // Standard Master-Admin anlegen, falls noch keiner existiert
-        const defaultAdmin = [{ username: 'MasterGuardian', pin: '2026', isMaster: true }];
+        const defaultAdmin = [{ username: 'Admin', pin: '////////', isMaster: true }];
         localStorage.setItem(STORAGE_ADMINS, JSON.stringify(defaultAdmin));
         return defaultAdmin;
     };
