@@ -2,7 +2,7 @@
  * ==========================================================================
  * DERREDGUARDIAN INDUSTRIES® - CORE APP CONTROLLER
  * Modular aufgebautes JavaScript für Tab-Steuerung, globalen Besuchszähler,
- * Admin.json Authentifizierung, Rollenrechte & GitHub-API Beitragsverwaltung.
+ * Admin.json Authentifizierung mit verschlüsseltem API-Key, Rollenrechte & GitHub-API.
  * ==========================================================================
  */
 
@@ -13,6 +13,9 @@ const DRGApp = (() => {
     const STORAGE_ADMIN_DATA = 'DRG_AdminData_V3';
     const STORAGE_VISITS = 'DRG_VisitCounter_V2';
     const SESSION_VISIT_KEY = 'DRG_Visited_Session';
+
+    // Verschlüsselungsschlüssel für den GitHub Token
+    const SYSTEM_SECRET_KEY = 'DRG_CYBER_NODE_SECRET_2026_MASTER_KEY';
 
     // GitHub Repository Konfiguration
     const GH_OWNER = 'DerRedGuardian';
@@ -30,11 +33,49 @@ const DRGApp = (() => {
     let cachedAdminSha = null;
 
     /* ==========================================================================
-       1. BESUCHSZÄHLER (USER COUNTER MODULE - GLOBAL VIA API)
+       0. KRYPTOGRAPHIE / CHIFFRIERUNG MODULE
        ========================================================================== */
     /**
-     * Initialisiert den globalen Besuchszähler über die REST-API.
+     * Verschlüsselt den GitHub-Token für die sichere Ablage in admin.json.
      */
+    const encryptToken = (plainText) => {
+        if (!plainText) return '';
+        try {
+            let result = '';
+            for (let i = 0; i < plainText.length; i++) {
+                const charCode = plainText.charCodeAt(i) ^ SYSTEM_SECRET_KEY.charCodeAt(i % SYSTEM_SECRET_KEY.length);
+                result += String.fromCharCode(charCode);
+            }
+            return 'DRG_ENC_' + btoa(result);
+        } catch (e) {
+            console.error('Verschlüsselungsfehler:', e);
+            return plainText;
+        }
+    };
+
+    /**
+     * Entschlüsselt den Token aus admin.json im Arbeitsspeicher zur Laufzeit.
+     */
+    const decryptToken = (cipherText) => {
+        if (!cipherText) return '';
+        if (!cipherText.startsWith('DRG_ENC_')) return cipherText; // Fallback falls unverschlüsselt
+        try {
+            const rawCipher = atob(cipherText.replace('DRG_ENC_', ''));
+            let result = '';
+            for (let i = 0; i < rawCipher.length; i++) {
+                const charCode = rawCipher.charCodeAt(i) ^ SYSTEM_SECRET_KEY.charCodeAt(i % SYSTEM_SECRET_KEY.length);
+                result += String.fromCharCode(charCode);
+            }
+            return result;
+        } catch (e) {
+            console.error('Entschlüsselungsfehler:', e);
+            return '';
+        }
+    };
+
+    /* ==========================================================================
+       1. BESUCHSZÄHLER (USER COUNTER MODULE - GLOBAL VIA API)
+       ========================================================================== */
     const initVisitorCounter = async () => {
         const headerCounter = document.getElementById('header-visit-count');
         const sidebarCounter = document.getElementById('sidebar-visit-count');
@@ -80,9 +121,6 @@ const DRGApp = (() => {
     /* ==========================================================================
        2. ADMIN.JSON & AUTHENTIFIZIERUNG MODULE
        ========================================================================== */
-    /**
-     * Ruft die Admin-Struktur und den API-Token ab (GitHub API -> Local JSON -> LocalStorage -> Default).
-     */
     const getAdminData = async () => {
         if (cachedAdminData) return cachedAdminData;
 
@@ -138,9 +176,8 @@ const DRGApp = (() => {
             } catch (e) {}
         }
 
-        // Default Admin-Struktur
         const defaultStructure = {
-            githubToken: "",
+            githubTokenEncrypted: "",
             admins: [{ username: "Admin", pin: "////////", isMaster: true }]
         };
         cachedAdminData = defaultStructure;
@@ -148,13 +185,13 @@ const DRGApp = (() => {
         return cachedAdminData;
     };
 
-    /**
-     * Speichert die aktualisierte admin.json auf GitHub.
-     */
     const saveAdminDataToGitHub = async (adminDataObj) => {
-        const token = adminDataObj.githubToken || (cachedAdminData ? cachedAdminData.githubToken : '');
+        // Entschlüssele den Token für die Authentifizierung des API-Calls
+        const encryptedStr = adminDataObj.githubTokenEncrypted || (cachedAdminData ? cachedAdminData.githubTokenEncrypted : '');
+        const token = decryptToken(encryptedStr);
+
         if (!token) {
-            alert('FEHLER: Kein GitHub Access Token in admin.json vorhanden. Änderungen konnten nicht auf GitHub gespeichert werden.');
+            alert('FEHLER: Kein gültiger GitHub Access Token vorhanden. Speichern auf GitHub nicht möglich.');
             return false;
         }
 
@@ -216,9 +253,6 @@ const DRGApp = (() => {
         }
     };
 
-    /**
-     * Rendert die Admin-Auswahlliste im Login-Formular.
-     */
     const renderAdminSelectOptions = async () => {
         const select = document.getElementById('login-admin-select');
         if (!select) return;
@@ -233,9 +267,6 @@ const DRGApp = (() => {
         });
     };
 
-    /**
-     * Login-Prüfung durchführen.
-     */
     const handleAdminLogin = async (e) => {
         e.preventDefault();
         const selectedUser = document.getElementById('login-admin-select').value;
@@ -251,7 +282,6 @@ const DRGApp = (() => {
             document.getElementById('admin-dashboard-view').style.display = 'flex';
             document.getElementById('current-admin-name').textContent = `${foundAdmin.username} [${foundAdmin.isMaster ? 'MASTER' : 'SUBADMIN'}]`;
             
-            // Sichtbarkeit beschränken: Nur Master darf Token & Admins verwalten
             applyRolePermissionsUI();
             await renderAdminPostsManagementList();
         } else {
@@ -259,13 +289,9 @@ const DRGApp = (() => {
         }
     };
 
-    /**
-     * Blendet administrative Elemente für Subadmins aus.
-     */
     const applyRolePermissionsUI = () => {
         const isMaster = currentAdminData && currentAdminData.isMaster;
 
-        // Container für "Neuen Employee hinzufügen" Steuerung
         const addAdminForm = document.getElementById('add-admin-form');
         if (addAdminForm) {
             const addAdminCard = addAdminForm.closest('.cyber-card');
@@ -274,7 +300,6 @@ const DRGApp = (() => {
             }
         }
 
-        // GitHub Token Karte rendern / verbergen
         if (isMaster) {
             renderGitHubTokenConfigCard();
         } else {
@@ -283,18 +308,12 @@ const DRGApp = (() => {
         }
     };
 
-    /**
-     * Admin Ausloggen.
-     */
     const handleAdminLogout = () => {
         currentAdminData = null;
         document.getElementById('admin-login-view').style.display = 'block';
         document.getElementById('admin-dashboard-view').style.display = 'none';
     };
 
-    /**
-     * Weiteren Subadmin anlegen (NUR MASTER ADMIN).
-     */
     const handleAddNewAdmin = async (e) => {
         e.preventDefault();
 
@@ -317,7 +336,6 @@ const DRGApp = (() => {
             return;
         }
 
-        // Füge neuen Subadmin hinzu (isMaster = false)
         adminData.admins.push({ username: name, pin: pin, isMaster: false });
         
         const success = await saveAdminDataToGitHub(adminData);
@@ -328,9 +346,6 @@ const DRGApp = (() => {
         }
     };
 
-    /**
-     * Rendert die GitHub Token Konfigurationskarte (Nur für Master Admin).
-     */
     const renderGitHubTokenConfigCard = () => {
         const dashboard = document.getElementById('admin-dashboard-view');
         if (!dashboard) return;
@@ -345,17 +360,15 @@ const DRGApp = (() => {
         }
 
         tokenCard.style.display = 'block';
-        const currentToken = (cachedAdminData && cachedAdminData.githubToken) ? cachedAdminData.githubToken : '';
-        const maskedToken = currentToken
-            ? (currentToken.substring(0, 4) + '****************' + currentToken.slice(-4))
-            : 'KEIN TOKEN IN ADMIN.JSON VORHANDEN';
+        const encryptedToken = (cachedAdminData && cachedAdminData.githubTokenEncrypted) ? cachedAdminData.githubTokenEncrypted : '';
+        const hasToken = Boolean(encryptedToken);
 
         tokenCard.innerHTML = `
             <h2 class="card-title"><i class="fa-brands fa-github"></i> GITHUB API TOKEN MANAGEMENT (MASTER ONLY)</h2>
             <div class="cyber-form">
                 <div class="form-group">
-                    <label>AKTUELLER TOKEN-STATUS (ADMIN.JSON)</label>
-                    <input type="text" class="cyber-input" value="${maskedToken}" disabled style="opacity: 0.7;">
+                    <label>AKTUELLER TOKEN-STATUS (IN ADMIN.JSON VERSCHLÜSSELT)</label>
+                    <input type="text" class="cyber-input" value="${hasToken ? 'DRG_VERSCHLÜSSELT_GESPEICHERT [OK]' : 'KEIN TOKEN IN ADMIN.JSON VORHANDEN'}" disabled style="opacity: 0.7;">
                 </div>
                 <div class="form-group">
                     <label for="gh-token-input">NEUEN GITHUB PERSONAL ACCESS TOKEN (PAT) EINGEBEN</label>
@@ -363,7 +376,7 @@ const DRGApp = (() => {
                 </div>
                 <div class="button-group">
                     <button type="button" class="cyber-button" id="save-gh-token-btn">
-                        <i class="fa-solid fa-floppy-disk"></i> TOKEN IN ADMIN.JSON SPEICHERN
+                        <i class="fa-solid fa-lock"></i> TOKEN VERSCHLÜSSELN & SPEICHERN
                     </button>
                 </div>
             </div>
@@ -377,7 +390,9 @@ const DRGApp = (() => {
             const newToken = document.getElementById('gh-token-input').value.trim();
             if (newToken) {
                 const adminData = await getAdminData();
-                adminData.githubToken = newToken;
+                adminData.githubTokenEncrypted = encryptToken(newToken);
+                delete adminData.githubToken; // Entferne unverschlüsselten alten Schlüssel falls vorhanden
+                
                 const saved = await saveAdminDataToGitHub(adminData);
                 if (saved) {
                     renderGitHubTokenConfigCard();
@@ -389,15 +404,11 @@ const DRGApp = (() => {
     };
 
     /* ==========================================================================
-       3. POSTS / NACHRICHTEN & PARSER MODULE
+       3. POSTS / NACHRICHTEN & GITHUB REST-API
        ========================================================================== */
-    /**
-     * Ruft alle Posts synchronisiert von GitHub API ab.
-     */
     const getPosts = async () => {
         if (cachedPosts) return cachedPosts;
 
-        // 1. Abruf über GitHub REST API
         try {
             const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE_PATH}?ref=${GH_BRANCH}`;
             const response = await fetch(apiUrl, { cache: 'no-store' });
@@ -425,7 +436,6 @@ const DRGApp = (() => {
             console.warn('GitHub API Posts Fetch fehlgeschlagen, versuche lokalen Fallback:', err);
         }
 
-        // 2. Fallback: Lokale posts.json Datei
         try {
             const localRes = await fetch('./posts.json?t=' + Date.now());
             if (localRes.ok) {
@@ -440,7 +450,6 @@ const DRGApp = (() => {
             console.warn('Lokaler posts.json Fetch fehlgeschlagen:', err);
         }
 
-        // 3. Fallback: LocalStorage
         const stored = localStorage.getItem(STORAGE_POSTS);
         if (stored) {
             try {
@@ -449,7 +458,6 @@ const DRGApp = (() => {
             } catch (e) {}
         }
 
-        // Standard Erstbeitrag
         const initialPosts = [{
             id: 1,
             title: 'Willkommen bei DerRedGuardian Industries®',
@@ -463,15 +471,14 @@ const DRGApp = (() => {
         return cachedPosts;
     };
 
-    /**
-     * Speichert Beiträge auf GitHub über den Token aus admin.json.
-     */
     const savePostsToGitHub = async (posts) => {
         const adminData = await getAdminData();
-        const token = adminData.githubToken;
+        // Entschlüssele den gespeicherten Key im Arbeitsspeicher
+        const encryptedStr = adminData.githubTokenEncrypted || adminData.githubToken;
+        const token = decryptToken(encryptedStr);
 
         if (!token) {
-            alert('FEHLER: Kein GitHub Access Token in admin.json konfiguriert! Wende dich an den Master Admin.');
+            alert('FEHLER: Kein gültiger GitHub Access Token in admin.json vorhanden! Wende dich an den Master Admin.');
             return false;
         }
 
@@ -531,9 +538,6 @@ const DRGApp = (() => {
         }
     };
 
-    /**
-     * Speichert die Posts im Storage & GitHub und aktualisiert die Anzeigen.
-     */
     const savePosts = async (posts) => {
         cachedPosts = posts;
         localStorage.setItem(STORAGE_POSTS, JSON.stringify(posts));
@@ -556,9 +560,6 @@ const DRGApp = (() => {
         await renderAdminPostsManagementList();
     };
 
-    /**
-     * Verarbeitet hochgeladene Bilddateien und konvertiert sie in Data-URL (Base64).
-     */
     const handleImageFileInput = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -572,9 +573,6 @@ const DRGApp = (() => {
         }
     };
 
-    /**
-     * Beitrag Speichern (Sowohl Neuerstellung als auch Bearbeiten)
-     */
     const handleSavePost = async (e) => {
         e.preventDefault();
         const editingId = document.getElementById('editing-post-id').value;
@@ -610,9 +608,6 @@ const DRGApp = (() => {
         resetPostForm();
     };
 
-    /**
-     * Setzt das Beitrags-Formular zurück.
-     */
     const resetPostForm = () => {
         document.getElementById('post-editor-form').reset();
         document.getElementById('editing-post-id').value = '';
@@ -623,9 +618,6 @@ const DRGApp = (() => {
         document.getElementById('cancel-edit-btn').style.display = 'none';
     };
 
-    /**
-     * Bereitet einen Beitrag im Formular zum Bearbeiten vor.
-     */
     const editPost = async (id) => {
         const posts = await getPosts();
         const post = posts.find(p => p.id == id);
@@ -652,9 +644,6 @@ const DRGApp = (() => {
         document.getElementById('post-editor-form').scrollIntoView({ behavior: 'smooth' });
     };
 
-    /**
-     * Löscht einen Beitrag.
-     */
     const deletePost = async (id) => {
         if (confirm('Soll dieser Beitrag wirklich unwiderruflich gelöscht werden?')) {
             let posts = await getPosts();
@@ -666,17 +655,11 @@ const DRGApp = (() => {
     /* ==========================================================================
        4. RENDERING MODULE (PARSER & PUBLIC FEED)
        ========================================================================== */
-    /**
-     * Formatiert Nachrichteninhalte und wandelt .link("...") & Bild("...") Syntax um.
-     */
     const formatPostContent = (rawText) => {
         if (!rawText) return '';
 
-        // 1. Grundlegendes XSS-Escaping
         let escaped = escapeHTML(rawText);
 
-        // 2. Syntax-Parsing für Links: Text.link("www.domain.com") oder Text.link("https://...")
-        // Verarbeitet sowohl geescapte Quotes (&quot;, &#39;) als auch normale Quotes
         escaped = escaped.replace(/([^\n\r<]+)\.link\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, label, url) => {
             let href = url.trim();
             if (!href.startsWith('http://') && !href.startsWith('https://')) {
@@ -685,7 +668,6 @@ const DRGApp = (() => {
             return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--neon-cyan, #00f3ff); font-weight:600; text-decoration:underline;"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.75rem;"></i> ${label.trim()}</a>`;
         });
 
-        // 3. Syntax-Parsing für Inline-Bilder/GIFs: Bild("https://domain.com/image.gif")
         escaped = escaped.replace(/Bild\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, url) => {
             let src = url.trim();
             if (!src.startsWith('http://') && !src.startsWith('https://')) {
@@ -694,13 +676,9 @@ const DRGApp = (() => {
             return `<img src="${src}" style="max-width:100%; border-radius:4px; margin:10px 0; border:1px solid var(--neon-pink, #ff007f); display:block;" alt="Embedded Media">`;
         });
 
-        // 4. Zeilenumbrüche umwandeln
         return escaped.replace(/\n/g, '<br>');
     };
 
-    /**
-     * Rendert die Beiträge im öffentlichen Feed (Hauptseite Tab 1).
-     */
     const renderPublicFeed = async () => {
         const container = document.getElementById('public-feed-container');
         if (!container) return;
@@ -727,9 +705,6 @@ const DRGApp = (() => {
         `).join('');
     };
 
-    /**
-     * Rendert die Liste der Beiträge zur Verwaltung im Admin-Dashboard.
-     */
     const renderAdminPostsManagementList = async () => {
         const container = document.getElementById('admin-posts-manage-list');
         if (!container) return;
@@ -759,9 +734,6 @@ const DRGApp = (() => {
         `).join('');
     };
 
-    /**
-     * XSS-Schutz durch HTML-Escaping.
-     */
     const escapeHTML = (str) => {
         return str ? str.replace(/[&<>'"]/g, tag => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[tag] || tag)) : '';
     };
@@ -785,17 +757,14 @@ const DRGApp = (() => {
     };
 
     const initEvents = () => {
-        // Admin & Login Formular Events
         document.getElementById('admin-login-form').addEventListener('submit', handleAdminLogin);
         document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
         document.getElementById('add-admin-form').addEventListener('submit', handleAddNewAdmin);
         
-        // Post Editor Events
         document.getElementById('post-editor-form').addEventListener('submit', handleSavePost);
         document.getElementById('post-image-file').addEventListener('change', handleImageFileInput);
         document.getElementById('cancel-edit-btn').addEventListener('click', resetPostForm);
 
-        // Cyber Tool Buttons
         const diagBtn = document.getElementById('system-diag-btn');
         const quickDiagBtn = document.getElementById('quick-diag-btn');
         const hashBtn = document.getElementById('hash-gen-btn');
@@ -805,9 +774,6 @@ const DRGApp = (() => {
         if (hashBtn) hashBtn.addEventListener('click', () => alert('Generierter Security Hash: ' + Math.random().toString(36).substring(2, 15).toUpperCase()));
     };
 
-    /**
-     * Öffentliche Initialisierungs-Methode
-     */
     const init = async () => {
         await initVisitorCounter();
         initTabs();
@@ -815,7 +781,6 @@ const DRGApp = (() => {
         await renderPublicFeed();
         initEvents();
 
-        // Security Lockouts (Kontextmenü & Shortcuts)
         document.addEventListener('contextmenu', (e) => e.preventDefault());
         document.addEventListener('keydown', (e) => {
             if (
@@ -839,5 +804,4 @@ const DRGApp = (() => {
 
 })();
 
-// Starten des Systems, sobald das DOM geladen ist
 document.addEventListener('DOMContentLoaded', DRGApp.init);
