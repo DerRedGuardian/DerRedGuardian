@@ -652,14 +652,17 @@ const DRGApp = (() => {
         }
     };
 
-    /* ==========================================================================
-       4. RENDERING MODULE (PARSER & PUBLIC FEED)
+   /* ==========================================================================
+       4. RENDERING MODULE (ERWEITERTE SYNTAX-PARSER ENGINE)
        ========================================================================== */
     const formatPostContent = (rawText) => {
         if (!rawText) return '';
 
+        // 1. Erst HTML zum Schutz vor XSS entschärfen
         let escaped = escapeHTML(rawText);
 
+        // --- BESTEHENDE BEFEHLE (UNVERÄNDERT & PERFEKT FUNKTIONAL) ---
+        // 1. Webseiten-Links: Name.link("https://...")
         escaped = escaped.replace(/([^\n\r<]+)\.link\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, label, url) => {
             let href = url.trim();
             if (!href.startsWith('http://') && !href.startsWith('https://')) {
@@ -668,6 +671,7 @@ const DRGApp = (() => {
             return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--neon-cyan, #00f3ff); font-weight:600; text-decoration:underline;"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.75rem;"></i> ${label.trim()}</a>`;
         });
 
+        // 2. Bilder: Bild("https://...")
         escaped = escaped.replace(/Bild\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, url) => {
             let src = url.trim();
             if (!src.startsWith('http://') && !src.startsWith('https://')) {
@@ -676,66 +680,60 @@ const DRGApp = (() => {
             return `<img src="${src}" style="max-width:100%; border-radius:4px; margin:10px 0; border:1px solid var(--neon-pink, #ff007f); display:block;" alt="Embedded Media">`;
         });
 
+        // --- NEUE STRUKTUR- & TEXTFORMATIERUNGEN ---
+        // 3. Überschrift: Überschrift(#00f3ff, 24, "Titeltext")
+        escaped = escaped.replace(/Überschrift\((?:&quot;|&#39;|["'])?(#?[a-zA-Z0-9#]+)(?:&quot;|&#39;|["'])?,\s*([\d]+)(?:px)?,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, size, text) => {
+            return `<h4 style="color: ${color.trim()}; font-size: ${size.trim()}px; margin: 14px 0 6px 0; font-weight: 700; line-height: 1.2;">${text}</h4>`;
+        });
+
+        // 4. Textfarbe: Farbe(#ff007f, "Text") oder Farbe(red, "Text")
+        escaped = escaped.replace(/Farbe\((?:&quot;|&#39;|["'])?(#?[a-zA-Z0-9#]+)(?:&quot;|&#39;|["'])?,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, text) => {
+            return `<span style="color: ${color.trim()};">${text}</span>`;
+        });
+
+        // 5. Schriftgröße: Größe(18, "Text")
+        escaped = escaped.replace(/Größe\(([\d]+)(?:px)?,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, size, text) => {
+            return `<span style="font-size: ${size.trim()}px;">${text}</span>`;
+        });
+
+        // 6. Unterstrichen: Unterstrichen("Text")
+        escaped = escaped.replace(/Unterstrichen\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<span style="text-decoration: underline; text-underline-offset: 3px;">${text}</span>`;
+        });
+
+        // 7. Durchgestrichen: Durchgestrichen("Text")
+        escaped = escaped.replace(/Durchgestrichen\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<span style="text-decoration: line-through; opacity: 0.75;">${text}</span>`;
+        });
+
+        // 8. Fett: Fett("Text")
+        escaped = escaped.replace(/Fett\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<strong style="font-weight: 700;">${text}</strong>`;
+        });
+
+        // 9. Kursiv: Kursiv("Text")
+        escaped = escaped.replace(/Kursiv\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<em style="font-style: italic;">${text}</em>`;
+        });
+
+        // --- CYBERPUNK SPECIAL EFFECTS ---
+        // 10. Neon Glow Effekte: NeonGlow(#00f3ff, "Leuchtender Text")
+        escaped = escaped.replace(/NeonGlow\((?:&quot;|&#39;|["'])?(#?[a-zA-Z0-9#]+)(?:&quot;|&#39;|["'])?,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, text) => {
+            const c = color.trim();
+            return `<span style="color: #ffffff; text-shadow: 0 0 5px ${c}, 0 0 10px ${c}, 0 0 20px ${c}; font-weight: 600;">${text}</span>`;
+        });
+
+        // 11. RGB Colorwheel / Regenbogen-Textanimation: RgbText("Farbverlauf Text")
+        escaped = escaped.replace(/RgbText\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<span class="drg-rgb-text">${text}</span>`;
+        });
+
+        // 12. Cyberpunk Warnbox / Alert: Warnung("Achtung Systemmeldung")
+        escaped = escaped.replace(/Warnung\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
+            return `<div class="drg-warning-box"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px;"></i>${text}</div>`;
+        });
+
         return escaped.replace(/\n/g, '<br>');
-    };
-
-    const renderPublicFeed = async () => {
-        const container = document.getElementById('public-feed-container');
-        if (!container) return;
-
-        const posts = await getPosts();
-
-        if (!posts || posts.length === 0) {
-            container.innerHTML = `<p style="color:var(--text-dim); text-align:center; padding:20px;">Keine Nachrichten im Terminal verzeichnet.</p>`;
-            return;
-        }
-
-        container.innerHTML = posts.map(post => `
-            <article class="post-card">
-                <div class="post-header">
-                    <div>
-                        <span class="post-author-badge"><i class="fa-solid fa-shield-halved"></i> ${escapeHTML(post.author)}</span>
-                        <span style="font-size: 0.8rem; margin-left: 8px;">${post.timestamp}</span>
-                    </div>
-                </div>
-                <h3 class="post-title">${escapeHTML(post.title)}</h3>
-                <div class="post-content">${formatPostContent(post.content)}</div>
-                ${post.imageUrl ? `<img src="${escapeHTML(post.imageUrl)}" class="post-image" alt="Post Image">` : ''}
-            </article>
-        `).join('');
-    };
-
-    const renderAdminPostsManagementList = async () => {
-        const container = document.getElementById('admin-posts-manage-list');
-        if (!container) return;
-
-        const posts = await getPosts();
-
-        if (!posts || posts.length === 0) {
-            container.innerHTML = `<p style="color:var(--text-dim);">Keine Beiträge zum Bearbeiten vorhanden.</p>`;
-            return;
-        }
-
-        container.innerHTML = posts.map(post => `
-            <div class="admin-manage-item">
-                <div>
-                    <strong style="color:var(--neon-purple);">${escapeHTML(post.title)}</strong> 
-                    <span style="font-size:0.8rem; color:var(--text-dim);">von ${escapeHTML(post.author)} am ${post.timestamp}</span>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="cyber-button cyber-button-secondary" style="padding:4px 10px; font-size:0.8rem;" onclick="DRGApp.editPost(${post.id})">
-                        <i class="fa-solid fa-pen"></i> Bearbeiten
-                    </button>
-                    <button class="cyber-button cyber-button-danger" onclick="DRGApp.deletePost(${post.id})">
-                        <i class="fa-solid fa-trash"></i> Löschen
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    };
-
-    const escapeHTML = (str) => {
-        return str ? str.replace(/[&<>'"]/g, tag => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[tag] || tag)) : '';
     };
 
     /* ==========================================================================
