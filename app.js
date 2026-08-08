@@ -2,7 +2,7 @@
  * ==========================================================================
  * DERREDGUARDIAN INDUSTRIES® - CORE APP CONTROLLER
  * Modular aufgebautes JavaScript für Tab-Steuerung, globalen Besuchszähler,
- * Admin.json Authentifizierung mit verschlüsseltem API-Key, Rollenrechte & GitHub-API.
+ * automatische sys_node.dat/admin.json Entschlüsselung, Rollenrechte & GitHub-API.
  * ==========================================================================
  */
 
@@ -14,7 +14,7 @@ const DRGApp = (() => {
     const STORAGE_VISITS = 'DRG_VisitCounter_V2';
     const SESSION_VISIT_KEY = 'DRG_Visited_Session';
 
-    // Verschlüsselungsschlüssel für den GitHub Token
+    // Verschlüsselungsschlüssel für Systemdateien & Tokens
     const SYSTEM_SECRET_KEY = 'DRG_CYBER_NODE_SECRET_2026_MASTER_KEY';
 
     // GitHub Repository Konfiguration
@@ -22,7 +22,8 @@ const DRGApp = (() => {
     const GH_REPO = 'DerRedGuardian';
     const GH_BRANCH = 'main';
     const GH_FILE_PATH = 'posts.json';
-    const GH_ADMIN_FILE_PATH = 'admin.json';
+    const GH_ADMIN_PRIMARY_FILE = 'sys_node.dat';
+    const GH_ADMIN_FALLBACK_FILE = 'admin.json';
 
     // Zustandsschlüssel (State)
     let currentAdminData = null; // { username, pin, isMaster }
@@ -33,43 +34,76 @@ const DRGApp = (() => {
     let cachedAdminSha = null;
 
     /* ==========================================================================
-       0. KRYPTOGRAPHIE / CHIFFRIERUNG MODULE
+       0. KRYPTOGRAPHIE / CHIFFRIERUNG & BASE64 HELPER MODULE
        ========================================================================== */
     /**
-     * Verschlüsselt den GitHub-Token für die sichere Ablage in admin.json.
+     * Konvertiert Uint8Array speicherschonend in Base64 (verhindert Browser-Crashes bei großen Daten)
      */
-    const encryptToken = (plainText) => {
-        if (!plainText) return '';
+    const uint8ToBase64 = (uint8Array) => {
+        let binary = '';
+        const len = uint8Array.byteLength;
+        const CHUNK_SIZE = 0x8000;
+        for (let i = 0; i < len; i += CHUNK_SIZE) {
+            binary += String.fromCharCode.apply(null, uint8Array.subarray(i, i + CHUNK_SIZE));
+        }
+        return btoa(binary);
+    };
+
+    /**
+     * Verschlüsselt ein beliebiges JavaScript-Objekt in einen sicheren Chiffre-String.
+     */
+    const encryptPayload = (dataObj) => {
+        if (!dataObj) return '';
         try {
-            let result = '';
-            for (let i = 0; i < plainText.length; i++) {
-                const charCode = plainText.charCodeAt(i) ^ SYSTEM_SECRET_KEY.charCodeAt(i % SYSTEM_SECRET_KEY.length);
-                result += String.fromCharCode(charCode);
+            const jsonString = JSON.stringify(dataObj);
+            const jsonBytes = new TextEncoder().encode(jsonString);
+            const keyBytes = new TextEncoder().encode(SYSTEM_SECRET_KEY);
+            const xorBytes = new Uint8Array(jsonBytes.length);
+
+            for (let i = 0; i < jsonBytes.length; i++) {
+                xorBytes[i] = jsonBytes[i] ^ keyBytes[i % keyBytes.length];
             }
-            return 'DRG_ENC_' + btoa(result);
+            return 'DRG_NODE_v3:' + uint8ToBase64(xorBytes);
         } catch (e) {
             console.error('Verschlüsselungsfehler:', e);
-            return plainText;
+            return '';
         }
     };
 
     /**
-     * Entschlüsselt den Token aus admin.json im Arbeitsspeicher zur Laufzeit.
+     * Entschlüsselt verschleierten Payload-String zurück in ein JavaScript-Objekt.
      */
-    const decryptToken = (cipherText) => {
-        if (!cipherText) return '';
-        if (!cipherText.startsWith('DRG_ENC_')) return cipherText; // Fallback falls unverschlüsselt
-        try {
-            const rawCipher = atob(cipherText.replace('DRG_ENC_', ''));
-            let result = '';
-            for (let i = 0; i < rawCipher.length; i++) {
-                const charCode = rawCipher.charCodeAt(i) ^ SYSTEM_SECRET_KEY.charCodeAt(i % SYSTEM_SECRET_KEY.length);
-                result += String.fromCharCode(charCode);
+    const decryptPayload = (cipherText) => {
+        if (!cipherText || typeof cipherText !== 'string') return null;
+
+        const cleanText = cipherText.trim();
+        if (!cleanText.startsWith('DRG_NODE_v3:')) {
+            try {
+                return JSON.parse(cleanText);
+            } catch (e) {
+                return null;
             }
-            return result;
+        }
+
+        try {
+            const rawBase64 = cleanText.replace('DRG_NODE_v3:', '').trim();
+            const binaryString = atob(rawBase64);
+            const xorBytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                xorBytes[i] = binaryString.charCodeAt(i);
+            }
+
+            const keyBytes = new TextEncoder().encode(SYSTEM_SECRET_KEY);
+            const jsonBytes = new Uint8Array(xorBytes.length);
+            for (let i = 0; i < xorBytes.length; i++) {
+                jsonBytes[i] = xorBytes[i] ^ keyBytes[i % keyBytes.length];
+            }
+
+            const decodedJsonStr = new TextDecoder().decode(jsonBytes);
+            return JSON.parse(decodedJsonStr);
         } catch (e) {
             console.error('Entschlüsselungsfehler:', e);
-            return '';
+            return null;
         }
     };
 
@@ -119,52 +153,70 @@ const DRGApp = (() => {
     };
 
     /* ==========================================================================
-       2. ADMIN.JSON & AUTHENTIFIZIERUNG MODULE
+       2. ADMIN & SYSTEM-DATEN MANAGEMENT
        ========================================================================== */
+    /**
+     * Versucht primär sys_node.dat zu laden, mit Fallback auf admin.json & LocalStorage.
+     */
     const getAdminData = async () => {
         if (cachedAdminData) return cachedAdminData;
 
-        // 1. Abruf von GitHub API
-        try {
-            const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_ADMIN_FILE_PATH}?ref=${GH_BRANCH}`;
-            const response = await fetch(apiUrl, { cache: 'no-store' });
+        // 1. Versuche sys_node.dat oder admin.json von GitHub zu laden
+        const filesToTry = [GH_ADMIN_PRIMARY_FILE, GH_ADMIN_FALLBACK_FILE];
 
-            if (response.ok) {
-                const data = await response.json();
-                cachedAdminSha = data.sha;
+        for (const fileName of filesToTry) {
+            try {
+                const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${fileName}?ref=${GH_BRANCH}`;
+                const response = await fetch(apiUrl, { cache: 'no-store' });
 
-                const base64Clean = data.content.replace(/\s/g, '');
-                const binaryString = atob(base64Clean);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
+                if (response.ok) {
+                    const data = await response.json();
+                    cachedAdminSha = data.sha;
+
+                    const base64Clean = data.content.replace(/\s/g, '');
+                    const binaryString = atob(base64Clean);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const rawContent = new TextDecoder().decode(bytes);
+
+                    let decryptedObj = decryptPayload(rawContent);
+
+                    if (!decryptedObj) {
+                        try {
+                            decryptedObj = JSON.parse(rawContent);
+                        } catch (e) {}
+                    }
+
+                    if (decryptedObj && Array.isArray(decryptedObj.admins)) {
+                        cachedAdminData = decryptedObj;
+                        localStorage.setItem(STORAGE_ADMIN_DATA, JSON.stringify(decryptedObj));
+                        return cachedAdminData;
+                    }
                 }
-                const decodedText = new TextDecoder().decode(bytes);
-                const parsedAdminData = JSON.parse(decodedText);
-
-                if (parsedAdminData && Array.isArray(parsedAdminData.admins)) {
-                    cachedAdminData = parsedAdminData;
-                    localStorage.setItem(STORAGE_ADMIN_DATA, JSON.stringify(parsedAdminData));
-                    return cachedAdminData;
-                }
+            } catch (err) {
+                console.warn(`Fetch für ${fileName} fehlgeschlagen:`, err);
             }
-        } catch (err) {
-            console.warn('GitHub admin.json Fetch fehlgeschlagen, versuche lokalen Fallback:', err);
         }
 
-        // 2. Fallback: Lokale admin.json
-        try {
-            const localRes = await fetch('./admin.json?t=' + Date.now());
-            if (localRes.ok) {
-                const parsedAdminData = await localRes.json();
-                if (parsedAdminData && Array.isArray(parsedAdminData.admins)) {
-                    cachedAdminData = parsedAdminData;
-                    localStorage.setItem(STORAGE_ADMIN_DATA, JSON.stringify(parsedAdminData));
-                    return cachedAdminData;
+        // 2. Fallback: Lokale Dateien per HTTP
+        for (const localFile of ['./sys_node.dat', './admin.json']) {
+            try {
+                const localRes = await fetch(`${localFile}?t=${Date.now()}`);
+                if (localRes.ok) {
+                    const text = await localRes.text();
+                    let decryptedObj = decryptPayload(text);
+                    if (!decryptedObj) {
+                        try { decryptedObj = JSON.parse(text); } catch (e) {}
+                    }
+                    if (decryptedObj && Array.isArray(decryptedObj.admins)) {
+                        cachedAdminData = decryptedObj;
+                        localStorage.setItem(STORAGE_ADMIN_DATA, JSON.stringify(decryptedObj));
+                        return cachedAdminData;
+                    }
                 }
-            }
-        } catch (err) {
-            console.warn('Lokaler admin.json Fetch fehlgeschlagen:', err);
+            } catch (err) {}
         }
 
         // 3. Fallback: LocalStorage
@@ -177,27 +229,28 @@ const DRGApp = (() => {
         }
 
         const defaultStructure = {
-            githubTokenEncrypted: "",
-            admins: [{ username: "Admin", pin: "////////", isMaster: true }]
+            githubToken: "",
+            admins: [{ username: "Admin", pin: "2026", isMaster: true }]
         };
         cachedAdminData = defaultStructure;
         localStorage.setItem(STORAGE_ADMIN_DATA, JSON.stringify(defaultStructure));
         return cachedAdminData;
     };
 
+    /**
+     * Speichert Einstellungen verschlüsselt in sys_node.dat auf GitHub.
+     */
     const saveAdminDataToGitHub = async (adminDataObj) => {
-        // Entschlüssele den Token für die Authentifizierung des API-Calls
-        const encryptedStr = adminDataObj.githubTokenEncrypted || (cachedAdminData ? cachedAdminData.githubTokenEncrypted : '');
-        const token = decryptToken(encryptedStr);
+        const token = adminDataObj.githubToken || (cachedAdminData ? cachedAdminData.githubToken : '');
 
         if (!token) {
-            alert('FEHLER: Kein gültiger GitHub Access Token vorhanden. Speichern auf GitHub nicht möglich.');
+            alert('FEHLER: Kein gültiger GitHub Access Token vorhanden. Speichern nicht möglich.');
             return false;
         }
 
         try {
             let sha = cachedAdminSha;
-            const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_ADMIN_FILE_PATH}?ref=${GH_BRANCH}`;
+            const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_ADMIN_PRIMARY_FILE}?ref=${GH_BRANCH}`;
             const getRes = await fetch(apiUrl, {
                 headers: {
                     'Authorization': `token ${token}`,
@@ -211,15 +264,11 @@ const DRGApp = (() => {
                 sha = getData.sha;
             }
 
-            const jsonString = JSON.stringify(adminDataObj, null, 2);
-            const utf8Bytes = new TextEncoder().encode(jsonString);
-            let binaryString = '';
-            for (let i = 0; i < utf8Bytes.length; i++) {
-                binaryString += String.fromCharCode(utf8Bytes[i]);
-            }
-            const contentBase64 = btoa(binaryString);
+            const encryptedPayloadString = encryptPayload(adminDataObj);
+            const utf8Bytes = new TextEncoder().encode(JSON.stringify(encryptedPayloadString));
+            const contentBase64 = uint8ToBase64(utf8Bytes);
 
-            const putRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_ADMIN_FILE_PATH}`, {
+            const putRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_ADMIN_PRIMARY_FILE}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `token ${token}`,
@@ -227,7 +276,7 @@ const DRGApp = (() => {
                     'Accept': 'application/vnd.github.v3+json'
                 },
                 body: JSON.stringify({
-                    message: `[DRG Terminal] Update admin.json via Master Admin (${currentAdminData?.username || 'Master'})`,
+                    message: `[DRG Terminal] Update ${GH_ADMIN_PRIMARY_FILE} via Master Admin`,
                     content: contentBase64,
                     sha: sha,
                     branch: GH_BRANCH
@@ -239,16 +288,16 @@ const DRGApp = (() => {
                 cachedAdminSha = resultData.content.sha;
                 cachedAdminData = adminDataObj;
                 localStorage.setItem(STORAGE_ADMIN_DATA, JSON.stringify(adminDataObj));
-                alert('SYSTEM UPDATE: admin.json erfolgreich auf GitHub aktualisiert!');
+                alert('SYSTEM UPDATE: Einstellungen verschlüsselt in sys_node.dat auf GitHub gesichert!');
                 return true;
             } else {
                 const errData = await putRes.json();
-                alert(`FEHLER beim Aktualisieren der admin.json: ${errData.message || 'Unbekannter Fehler'}`);
+                alert(`FEHLER beim Speichern: ${errData.message || 'Unbekannter Fehler'}`);
                 return false;
             }
         } catch (err) {
             console.error('GitHub API Admin Save Error:', err);
-            alert('FEHLER: Verbindung zur GitHub API beim Speichern der admin.json fehlgeschlagen.');
+            alert('FEHLER: Verbindung zur GitHub API fehlgeschlagen.');
             return false;
         }
     };
@@ -281,7 +330,7 @@ const DRGApp = (() => {
             document.getElementById('admin-login-view').style.display = 'none';
             document.getElementById('admin-dashboard-view').style.display = 'flex';
             document.getElementById('current-admin-name').textContent = `${foundAdmin.username} [${foundAdmin.isMaster ? 'MASTER' : 'SUBADMIN'}]`;
-            
+
             applyRolePermissionsUI();
             await renderAdminPostsManagementList();
         } else {
@@ -337,10 +386,10 @@ const DRGApp = (() => {
         }
 
         adminData.admins.push({ username: name, pin: pin, isMaster: false });
-        
+
         const success = await saveAdminDataToGitHub(adminData);
         if (success) {
-            alert(`Employee "${name}" wurde erfolgreich hinzugefügt und in admin.json gespeichert!`);
+            alert(`Employee "${name}" wurde erfolgreich hinzugefügt und verschlüsselt gespeichert!`);
             document.getElementById('add-admin-form').reset();
             await renderAdminSelectOptions();
         }
@@ -360,15 +409,14 @@ const DRGApp = (() => {
         }
 
         tokenCard.style.display = 'block';
-        const encryptedToken = (cachedAdminData && cachedAdminData.githubTokenEncrypted) ? cachedAdminData.githubTokenEncrypted : '';
-        const hasToken = Boolean(encryptedToken);
+        const hasToken = Boolean(cachedAdminData && cachedAdminData.githubToken);
 
         tokenCard.innerHTML = `
             <h2 class="card-title"><i class="fa-brands fa-github"></i> GITHUB API TOKEN MANAGEMENT (MASTER ONLY)</h2>
             <div class="cyber-form">
                 <div class="form-group">
-                    <label>AKTUELLER TOKEN-STATUS (IN ADMIN.JSON VERSCHLÜSSELT)</label>
-                    <input type="text" class="cyber-input" value="${hasToken ? 'DRG_VERSCHLÜSSELT_GESPEICHERT [OK]' : 'KEIN TOKEN IN ADMIN.JSON VORHANDEN'}" disabled style="opacity: 0.7;">
+                    <label>AKTUELLER TOKEN-STATUS (IN SYS_NODE.DAT VERSCHLÜSSELT)</label>
+                    <input type="text" class="cyber-input" value="${hasToken ? 'DRG_VERSCHLÜSSELT_GESPEICHERT [OK]' : 'KEIN TOKEN IN SYS_NODE.DAT VORHANDEN'}" disabled style="opacity: 0.7;">
                 </div>
                 <div class="form-group">
                     <label for="gh-token-input">NEUEN GITHUB PERSONAL ACCESS TOKEN (PAT) EINGEBEN</label>
@@ -390,9 +438,8 @@ const DRGApp = (() => {
             const newToken = document.getElementById('gh-token-input').value.trim();
             if (newToken) {
                 const adminData = await getAdminData();
-                adminData.githubTokenEncrypted = encryptToken(newToken);
-                delete adminData.githubToken; // Entferne unverschlüsselten alten Schlüssel falls vorhanden
-                
+                adminData.githubToken = newToken;
+
                 const saved = await saveAdminDataToGitHub(adminData);
                 if (saved) {
                     renderGitHubTokenConfigCard();
@@ -473,12 +520,10 @@ const DRGApp = (() => {
 
     const savePostsToGitHub = async (posts) => {
         const adminData = await getAdminData();
-        // Entschlüssele den gespeicherten Key im Arbeitsspeicher
-        const encryptedStr = adminData.githubTokenEncrypted || adminData.githubToken;
-        const token = decryptToken(encryptedStr);
+        const token = adminData.githubToken;
 
         if (!token) {
-            alert('FEHLER: Kein gültiger GitHub Access Token in admin.json vorhanden! Wende dich an den Master Admin.');
+            alert('FEHLER: Kein gültiger GitHub Access Token vorhanden! Wende dich an den Master Admin.');
             return false;
         }
 
@@ -500,11 +545,7 @@ const DRGApp = (() => {
 
             const jsonString = JSON.stringify(posts, null, 2);
             const utf8Bytes = new TextEncoder().encode(jsonString);
-            let binaryString = '';
-            for (let i = 0; i < utf8Bytes.length; i++) {
-                binaryString += String.fromCharCode(utf8Bytes[i]);
-            }
-            const contentBase64 = btoa(binaryString);
+            const contentBase64 = uint8ToBase64(utf8Bytes);
 
             const putRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE_PATH}`, {
                 method: 'PUT',
@@ -652,16 +693,14 @@ const DRGApp = (() => {
         }
     };
 
-   /* ==========================================================================
+    /* ==========================================================================
        4. RENDERING MODULE (ERWEITERTE SYNTAX-PARSER ENGINE)
        ========================================================================== */
     const formatPostContent = (rawText) => {
         if (!rawText) return '';
 
-        // 1. Erst HTML zum Schutz vor XSS entschärfen
         let escaped = escapeHTML(rawText);
 
-        // --- BESTEHENDE BEFEHLE (UNVERÄNDERT & PERFEKT FUNKTIONAL) ---
         // 1. Webseiten-Links: Name.link("https://...")
         escaped = escaped.replace(/([^\n\r<]+)\.link\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, label, url) => {
             let href = url.trim();
@@ -680,13 +719,12 @@ const DRGApp = (() => {
             return `<img src="${src}" style="max-width:100%; border-radius:4px; margin:10px 0; border:1px solid var(--neon-pink, #ff007f); display:block;" alt="Embedded Media">`;
         });
 
-        // --- NEUE STRUKTUR- & TEXTFORMATIERUNGEN ---
         // 3. Überschrift: Überschrift(#00f3ff, 24, "Titeltext")
         escaped = escaped.replace(/Überschrift\((?:&quot;|&#39;|["'])?(#?[a-zA-Z0-9#]+)(?:&quot;|&#39;|["'])?,\s*([\d]+)(?:px)?,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, size, text) => {
             return `<h4 style="color: ${color.trim()}; font-size: ${size.trim()}px; margin: 14px 0 6px 0; font-weight: 700; line-height: 1.2;">${text}</h4>`;
         });
 
-        // 4. Textfarbe: Farbe(#ff007f, "Text") oder Farbe(red, "Text")
+        // 4. Textfarbe: Farbe(#ff007f, "Text")
         escaped = escaped.replace(/Farbe\((?:&quot;|&#39;|["'])?(#?[a-zA-Z0-9#]+)(?:&quot;|&#39;|["'])?,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, text) => {
             return `<span style="color: ${color.trim()};">${text}</span>`;
         });
@@ -696,44 +734,102 @@ const DRGApp = (() => {
             return `<span style="font-size: ${size.trim()}px;">${text}</span>`;
         });
 
-        // 6. Unterstrichen: Unterstrichen("Text")
+        // 6. Unterstrichen
         escaped = escaped.replace(/Unterstrichen\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
             return `<span style="text-decoration: underline; text-underline-offset: 3px;">${text}</span>`;
         });
 
-        // 7. Durchgestrichen: Durchgestrichen("Text")
+        // 7. Durchgestrichen
         escaped = escaped.replace(/Durchgestrichen\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
             return `<span style="text-decoration: line-through; opacity: 0.75;">${text}</span>`;
         });
 
-        // 8. Fett: Fett("Text")
+        // 8. Fett
         escaped = escaped.replace(/Fett\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
             return `<strong style="font-weight: 700;">${text}</strong>`;
         });
 
-        // 9. Kursiv: Kursiv("Text")
+        // 9. Kursiv
         escaped = escaped.replace(/Kursiv\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
             return `<em style="font-style: italic;">${text}</em>`;
         });
 
-        // --- CYBERPUNK SPECIAL EFFECTS ---
-        // 10. Neon Glow Effekte: NeonGlow(#00f3ff, "Leuchtender Text")
+        // 10. Neon Glow
         escaped = escaped.replace(/NeonGlow\((?:&quot;|&#39;|["'])?(#?[a-zA-Z0-9#]+)(?:&quot;|&#39;|["'])?,\s*(?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, color, text) => {
             const c = color.trim();
             return `<span style="color: #ffffff; text-shadow: 0 0 5px ${c}, 0 0 10px ${c}, 0 0 20px ${c}; font-weight: 600;">${text}</span>`;
         });
 
-        // 11. RGB Colorwheel / Regenbogen-Textanimation: RgbText("Farbverlauf Text")
+        // 11. RGB Text Animation
         escaped = escaped.replace(/RgbText\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
             return `<span class="drg-rgb-text">${text}</span>`;
         });
 
-        // 12. Cyberpunk Warnbox / Alert: Warnung("Achtung Systemmeldung")
+        // 12. Cyberpunk Warnbox
         escaped = escaped.replace(/Warnung\((?:&quot;|&#39;|["'])(.*?)(?:&quot;|&#39;|["'])\)/gi, (match, text) => {
             return `<div class="drg-warning-box"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px;"></i>${text}</div>`;
         });
 
         return escaped.replace(/\n/g, '<br>');
+    };
+
+    const renderPublicFeed = async () => {
+        const container = document.getElementById('public-feed-container');
+        if (!container) return;
+
+        const posts = await getPosts();
+
+        if (!posts || posts.length === 0) {
+            container.innerHTML = `<p style="color:var(--text-dim); text-align:center; padding:20px;">Keine Nachrichten im Terminal verzeichnet.</p>`;
+            return;
+        }
+
+        container.innerHTML = posts.map(post => `
+            <article class="post-card">
+                <div class="post-header">
+                    <div>
+                        <span class="post-author-badge"><i class="fa-solid fa-shield-halved"></i> ${escapeHTML(post.author)}</span>
+                        <span style="font-size: 0.8rem; margin-left: 8px;">${post.timestamp}</span>
+                    </div>
+                </div>
+                <h3 class="post-title">${escapeHTML(post.title)}</h3>
+                <div class="post-content">${formatPostContent(post.content)}</div>
+                ${post.imageUrl ? `<img src="${escapeHTML(post.imageUrl)}" class="post-image" alt="Post Image">` : ''}
+            </article>
+        `).join('');
+    };
+
+    const renderAdminPostsManagementList = async () => {
+        const container = document.getElementById('admin-posts-manage-list');
+        if (!container) return;
+
+        const posts = await getPosts();
+
+        if (!posts || posts.length === 0) {
+            container.innerHTML = `<p style="color:var(--text-dim);">Keine Beiträge zum Bearbeiten vorhanden.</p>`;
+            return;
+        }
+
+        container.innerHTML = posts.map(post => `
+            <div class="admin-manage-item">
+                <div>
+                    <strong style="color:var(--neon-purple);">${escapeHTML(post.title)}</strong> 
+                    <span style="font-size:0.8rem; color:var(--text-dim);">von ${escapeHTML(post.author)} am ${post.timestamp}</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="cyber-button cyber-button-secondary" style="padding:4px 10px; font-size:0.8rem;" onclick="DRGApp.editPost(${post.id})">
+                        <i class="fa-solid fa-pen"></i> Bearbeiten
+                    </button>
+                    <button class="cyber-button cyber-button-danger" onclick="DRGApp.deletePost(${post.id})">
+                        <i class="fa-solid fa-trash"></i> Löschen
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    };
+
+    const escapeHTML = (str) => {
+        return str ? str.replace(/[&<>'"]/g, tag => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[tag] || tag)) : '';
     };
 
     /* ==========================================================================
@@ -744,7 +840,7 @@ const DRGApp = (() => {
         navButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetTab = btn.getAttribute('data-tab');
-                
+
                 navButtons.forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
 
@@ -758,7 +854,7 @@ const DRGApp = (() => {
         document.getElementById('admin-login-form').addEventListener('submit', handleAdminLogin);
         document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
         document.getElementById('add-admin-form').addEventListener('submit', handleAddNewAdmin);
-        
+
         document.getElementById('post-editor-form').addEventListener('submit', handleSavePost);
         document.getElementById('post-image-file').addEventListener('change', handleImageFileInput);
         document.getElementById('cancel-edit-btn').addEventListener('click', resetPostForm);
