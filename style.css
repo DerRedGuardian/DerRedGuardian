@@ -308,6 +308,47 @@ body {
     box-shadow: var(--glow-pink);
 }
 
+.syntax-helper-box {
+    margin-top: 8px;
+    margin-bottom: 15px;
+    padding: 10px 14px;
+    background: rgba(0, 243, 255, 0.05);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    border-left: 3px solid var(--neon-cyan, #00f3ff);
+    border-radius: 4px;
+    font-size: 0.82rem;
+}
+
+.syntax-helper-title {
+    color: var(--neon-cyan, #00f3ff);
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.syntax-helper-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.syntax-item {
+    color: var(--text-dim, #a0a0a0);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.syntax-item code {
+    background: rgba(0, 0, 0, 0.5);
+    color: #ff00ff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 0, 255, 0.3);
+    font-family: 'Courier New', Courier, monospace;
+}
+
 /* Button Variants */
 .button-group {
     display: flex;
