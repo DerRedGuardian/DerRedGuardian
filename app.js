@@ -397,6 +397,19 @@ const DRGApp = (() => {
         renderAdminSelectOptions();
         renderPublicFeed();
         initEvents();
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // 2. F12, Strg+Shift+I, Strg+Shift+J, Strg+U sperren
+        document.addEventListener('keydown', (e) => {
+          if (
+            e.key === 'F12' ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) ||
+            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+          ) {
+            e.preventDefault();
+            return false;
+          }
+        });
         console.log('DerRedGuardian Industries® Terminal System gestartet.');
     };
 
