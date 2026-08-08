@@ -22,7 +22,7 @@ const DRGApp = (() => {
        1. BESUCHSZÄHLER (USER COUNTER MODULE)
        ========================================================================== */
     const initVisitorCounter = () => {
-        let visits = parseInt(localStorage.getItem(STORAGE_VISITS)) || 1480; // Start-Basiswert
+        let visits = parseInt(localStorage.getItem(STORAGE_VISITS)) || 0; // Start-Basiswert
         
         // Zähle bei neuem Aufruf in einer neuen Browser-Sitzung hoch
         if (!sessionStorage.getItem(SESSION_VISIT_KEY)) {
