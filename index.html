@@ -51,6 +51,24 @@
             scroll-behavior: smooth;
         }
 
+        .Logo {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            
+            /* Maske für moderne Browser (Chrome, Edge, Firefox) */
+            mask-image: 
+            linear-gradient(to right, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%),
+            linear-gradient(to bottom, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
+            mask-composite: intersect;
+            
+            /* Maske für Safari-Browser */
+            -webkit-mask-image: 
+            linear-gradient(to right, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%),
+            linear-gradient(to bottom, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
+            -webkit-mask-composite: source-in;
+        }
+
         body {
             background: var(--bg-primary);
             background-image:
@@ -846,7 +864,7 @@
     <header class="cyber-header">
         <div class="header-container">
             <div>
-                    <img src="assets/LogoV2.2.png" alt="Beschreibung" style="max-width: 100%; height: auto;">
+                    <img src="assets/LogoV2.2.png" alt="Logo" class="Logo">
             </div>
             <!-- Besuchszähler Badge im Header -->
             <div class="header-counter-badge">
