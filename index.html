@@ -3,29 +3,852 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DerRedGuardian Industries® Home Terminal</title>
-    
-    <!-- Cyberpunk Typografie & Icons -->
+    <title>DerRedGuardian Industries® – Heavy Metal Terminal</title>
+
+    <!-- Google Fonts für den industriellen Look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Externe Stylesheet-Datei -->
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ============================================================
+           GLOBAL RESET & ROOT – Heavy Metal Industry Design
+           ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0b0b0b;
+            --bg-secondary: #161616;
+            --bg-card: #1a1a1a;
+            
+            /* Gebürsteter Stahl */
+            --steel-light: #cbd5e1;
+            --steel: #94a3b8;
+            --steel-dark: #64748b;
+            --steel-border: #334155;
+            --steel-glow: rgba(148, 163, 184, 0.3);
+            
+            /* Sanftes Bordeaux Rot */
+            --bordeaux: #6e1a1a;
+            --bordeaux-light: #a33a3a;
+            --bordeaux-glow: rgba(110, 26, 26, 0.4);
+            --bordeaux-bg: rgba(110, 26, 26, 0.08);
+            
+            --text-primary: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --font-head: 'Oswald', sans-serif;
+            --font-body: 'Roboto Condensed', sans-serif;
+            --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg-primary);
+            background-image:
+                repeating-linear-gradient(45deg,
+                    rgba(148, 163, 184, 0.03) 0px,
+                    rgba(148, 163, 184, 0.03) 2px,
+                    transparent 2px,
+                    transparent 6px),
+                radial-gradient(circle at 20% 30%, #1a1a1a 0%, #0b0b0b 80%);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        /* Leichte Stahl-Textur über dem gesamten Hintergrund */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Alle Inhalte über dem Hintergrund */
+        body>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================================
+           SCANLINE – deaktiviert
+           ============================================================ */
+        .scanlines {
+            display: none;
+        }
+
+        /* ============================================================
+           HEADER – Stahl und Bordeaux
+           ============================================================ */
+        .cyber-header {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+            border-bottom: 3px solid var(--steel-border);
+            padding: 1.2rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-heavy), inset 0 1px 0 rgba(148, 163, 184, 0.1);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .glitch-title {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 2.4rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--steel-light);
+            text-shadow: 0 0 10px rgba(148, 163, 184, 0.3), 0 0 20px rgba(148, 163, 184, 0.1);
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .glitch-title::before {
+            content: "⚙️ ";
+            font-size: 2rem;
+            margin-right: 0.5rem;
+            filter: drop-shadow(0 0 6px rgba(148, 163, 184, 0.4));
+        }
+
+        .header-subtext {
+            font-family: var(--font-body);
+            font-weight: 400;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--steel-dark);
+            text-transform: uppercase;
+            margin-top: 0.2rem;
+        }
+
+        .header-subtext i {
+            color: var(--bordeaux-light);
+            margin-right: 0.5rem;
+        }
+
+        .header-counter-badge {
+            background: #1a1a1a;
+            border: 1px solid var(--steel-border);
+            padding: 0.4rem 1.2rem;
+            border-radius: 30px;
+            font-family: var(--font-head);
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--steel-light);
+            text-shadow: 0 0 8px rgba(148, 163, 184, 0.2);
+            letter-spacing: 1px;
+            box-shadow: inset 0 0 20px rgba(148, 163, 184, 0.05);
+        }
+
+        .header-counter-badge i {
+            color: var(--bordeaux);
+            margin-right: 0.5rem;
+        }
+
+        /* ============================================================
+           GRID LAYOUT – Sidebar + Main
+           ============================================================ */
+        .cyber-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: start;
+        }
+
+        /* ============================================================
+           SIDEBAR – Stahl und Bordeaux
+           ============================================================ */
+        .cyber-sidebar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--steel-border);
+            border-radius: 6px;
+            padding: 1.8rem 1.2rem;
+            box-shadow: var(--shadow-heavy);
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2.2rem;
+        }
+        .sidebar-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .sidebar-title {
+            font-family: var(--font-head);
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--steel-light);
+            border-bottom: 1px solid var(--steel-border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-title::before {
+            content: "▸";
+            color: var(--bordeaux);
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 0.7rem 1rem;
+            color: var(--text-muted);
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .nav-btn i {
+            width: 1.4rem;
+            color: var(--steel-dark);
+            transition: color 0.2s;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--steel-border);
+            color: var(--steel-light);
+            background: var(--bordeaux-bg);
+            box-shadow: inset 0 0 20px rgba(110, 26, 26, 0.05);
+        }
+
+        .nav-btn:hover i {
+            color: var(--bordeaux-light);
+        }
+
+        .nav-btn.active {
+            border-color: var(--steel-border);
+            color: var(--steel-light);
+            background: var(--bordeaux-bg);
+            box-shadow: inset 0 0 30px rgba(110, 26, 26, 0.05);
+        }
+
+        .nav-btn.active i {
+            color: var(--bordeaux);
+        }
+
+        .nav-btn form {
+            display: contents;
+        }
+
+        .nav-btn p {
+            margin: 0;
+            font-size: 0.7rem;
+            line-height: 1.2;
+            color: var(--steel-dark);
+        }
+
+        /* Tools-Liste */
+        .tools-list {
+            list-style: none;
+            padding: 0;
+        }
+        .tools-list li {
+            margin-bottom: 0.6rem;
+        }
+
+        .tool-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .tool-link i {
+            color: var(--steel-dark);
+            width: 1.4rem;
+        }
+
+        .tool-link:hover {
+            color: var(--steel-light);
+            border-color: var(--steel-border);
+            background: var(--bordeaux-bg);
+        }
+        .tool-link:hover i {
+            color: var(--bordeaux-light);
+        }
+
+        /* System Info Box */
+        .system-info-box {
+            background: #0d0d0d;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 1rem;
+        }
+        .system-info-box p {
+            margin: 0.4rem 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .system-info-box strong {
+            color: var(--steel-light);
+            font-weight: 600;
+        }
+
+        /* ============================================================
+           MAIN BEREICH – Karten mit Stahl-Rändern
+           ============================================================ */
+        .cyber-main {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .cyber-card {
+            background: var(--bg-card);
+            border: 1px solid var(--steel-border);
+            border-radius: 6px;
+            padding: 1.8rem 2rem;
+            box-shadow: var(--shadow-heavy);
+            margin-bottom: 1.5rem;
+        }
+        .cyber-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .card-title {
+            font-family: var(--font-head);
+            font-weight: 600;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            color: var(--steel-light);
+            border-bottom: 1px solid var(--steel-border);
+            padding-bottom: 0.6rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .card-title i {
+            color: var(--bordeaux);
+            font-size: 1.3rem;
+        }
+
+        .card-description {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .card-description strong {
+            color: var(--steel-light);
+        }
+
+        /* ============================================================
+           FORMULARE & EINGABEN – industriell, kantig
+           ============================================================ */
+        .cyber-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .form-group label {
+            font-family: var(--font-head);
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--steel-dark);
+        }
+
+        .cyber-input,
+        .cyber-select,
+        .cyber-textarea {
+            background: #0d0d0d;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 0.7rem 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            transition: border 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .cyber-input:focus,
+        .cyber-select:focus,
+        .cyber-textarea:focus {
+            outline: none;
+            border-color: var(--steel);
+            box-shadow: 0 0 20px rgba(148, 163, 184, 0.1);
+        }
+
+        .cyber-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Buttons – Stahl mit Bordeaux-Hover */
+        .cyber-button {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 0.8rem 1.8rem;
+            color: var(--steel-light);
+            font-family: var(--font-head);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.05);
+            text-decoration: none;
+        }
+
+        .cyber-button:hover {
+            background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+            border-color: var(--bordeaux-light);
+            box-shadow: 0 0 30px rgba(110, 26, 26, 0.15), inset 0 0 30px rgba(110, 26, 26, 0.05);
+            transform: scale(1.02);
+            color: #fff;
+        }
+
+        .cyber-button i {
+            color: var(--bordeaux);
+        }
+        .cyber-button:hover i {
+            color: var(--bordeaux-light);
+        }
+
+        .cyber-button-secondary {
+            background: transparent;
+            border-color: var(--steel-border);
+            color: var(--text-muted);
+            box-shadow: none;
+        }
+        .cyber-button-secondary:hover {
+            background: var(--bordeaux-bg);
+            border-color: var(--bordeaux-light);
+            color: var(--steel-light);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .cyber-button-danger {
+            border-color: var(--bordeaux);
+            color: var(--bordeaux-light);
+        }
+        .cyber-button-danger:hover {
+            border-color: var(--bordeaux-light);
+            box-shadow: 0 0 30px rgba(110, 26, 26, 0.2);
+            color: #ff4d4d;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* ============================================================
+           ADMIN DASHBOARD spezifisch
+           ============================================================ */
+        .admin-status-bar {
+            background: #0d0d0d;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .status-label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .status-admin-name {
+            color: var(--steel-light);
+            font-weight: 700;
+            font-size: 1.1rem;
+            font-family: var(--font-head);
+        }
+
+        /* Syntax-Helfer */
+        .syntax-helper-box {
+            background: #0d0d0d;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .syntax-helper-title {
+            font-family: var(--font-head);
+            font-weight: 600;
+            color: var(--steel-light);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .syntax-helper-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.2rem 1.5rem;
+            font-size: 0.85rem;
+        }
+        .syntax-item span {
+            color: var(--steel-dark);
+            font-weight: 600;
+        }
+        .syntax-item code {
+            background: #1a1a1a;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            color: var(--steel-light);
+            font-family: monospace;
+            font-size: 0.8rem;
+            border: 1px solid var(--steel-border);
+        }
+
+        /* Bildvorschau */
+        .image-preview-box {
+            margin-top: 0.5rem;
+            padding: 0.8rem;
+            background: #0d0d0d;
+            border: 1px dashed var(--steel-border);
+            border-radius: 4px;
+            display: none;
+        }
+        .image-preview-box.visible {
+            display: block;
+        }
+        .preview-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 0.5rem;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+        }
+
+        /* Admin-Post-Liste */
+        #admin-posts-manage-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .admin-post-item {
+            background: #0d0d0d;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 0.8rem 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+        .admin-post-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .admin-post-title {
+            font-weight: 700;
+            color: var(--steel-light);
+        }
+        .admin-post-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .admin-post-actions {
+            display: flex;
+            gap: 0.6rem;
+        }
+        .admin-post-actions button {
+            background: transparent;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 0.3rem 0.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+        }
+        .admin-post-actions .edit-btn:hover {
+            border-color: var(--bordeaux-light);
+            color: var(--steel-light);
+            background: var(--bordeaux-bg);
+        }
+        .admin-post-actions .delete-btn:hover {
+            border-color: var(--bordeaux);
+            color: var(--bordeaux-light);
+            background: rgba(110, 26, 26, 0.1);
+        }
+
+        /* ============================================================
+           TOOLS TAB
+           ============================================================ */
+        .tools-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* ============================================================
+           FOOTER
+           ============================================================ */
+        .cyber-footer {
+            margin-top: 3rem;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--steel-border);
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            background: var(--bg-secondary);
+            border-radius: 0 0 4px 4px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cyber-footer p {
+            margin: 0;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 1024px) {
+            .cyber-grid {
+                grid-template-columns: 1fr;
+            }
+            .cyber-sidebar {
+                position: static;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .syntax-helper-content {
+                grid-template-columns: 1fr;
+            }
+            .glitch-title {
+                font-size: 1.8rem;
+            }
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-counter-badge {
+                align-self: flex-start;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .cyber-header {
+                padding: 1rem;
+            }
+            .cyber-card {
+                padding: 1.2rem;
+            }
+            .admin-status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .glitch-title {
+                font-size: 1.4rem;
+            }
+            .header-subtext {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* ============================================================
+           OVERRIDE für den "Modular Logic Studio" Button im Sidebar
+           ============================================================ */
+        .nav-btn form button.nav-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 0.7rem 1rem;
+            color: var(--text-muted);
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .nav-btn form button.nav-btn:hover {
+            border-color: var(--steel-border);
+            color: var(--steel-light);
+            background: var(--bordeaux-bg);
+        }
+
+        .nav-btn form button.nav-btn i {
+            color: var(--steel-dark);
+        }
+        .nav-btn form button.nav-btn:hover i {
+            color: var(--bordeaux-light);
+        }
+
+        /* ============================================================
+           MESSAGES CONTAINER (öffentlicher Feed)
+           ============================================================ */
+        .messages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        .message-item {
+            background: #0d0d0d;
+            border: 1px solid var(--steel-border);
+            border-radius: 4px;
+            padding: 1rem 1.2rem;
+        }
+        .message-item h3 {
+            font-family: var(--font-head);
+            color: var(--steel-light);
+            font-size: 1.2rem;
+            margin-bottom: 0.3rem;
+        }
+        .message-item .meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+        }
+        .message-item .content {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        .message-item .content img {
+            max-width: 100%;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            border: 1px solid var(--steel-border);
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Retro CRT Scanline Overlay -->
+    <!-- Retro CRT Scanline Overlay (deaktiviert) -->
     <div class="scanlines"></div>
 
     <!-- Header Bereich -->
     <header class="cyber-header">
         <div class="header-container">
             <div>
-                <h1 class="glitch-title" data-text="DerRedGuardian Industries®">DerRedGuardian Industries®</h1>
+                <h1 class="glitch-title">DerRedGuardian Industries®</h1>
                 <p class="header-subtext">
-                    <i class="fa-solid fa-signal"></i> SYSTEM PROTOCOL 2026 // SECURE CYBER NODE
+                    <i class="fa-solid fa-signal"></i> HEAVY METAL PROTOCOL 2026 // INDUSTRIAL NODE
                 </p>
             </div>
             <!-- Besuchszähler Badge im Header -->
@@ -53,20 +876,15 @@
                         <i class="fa-solid fa-toolbox"></i> System Tools
                     </button>
                     <form action="Modular Logic Studio V2.2.html">
-                    <button class="nav-btn">
-                        <i class="fa-solid fa-puzzle-piece"></i> <i class="fa-solid fa-route"></i>
-                        <br><p>Modular Logic Studio V2.2</p>
-                    </button>
+                        <button class="nav-btn" type="submit">
+                            <i class="fa-solid fa-puzzle-piece"></i> <i class="fa-solid fa-route"></i>
+                            <br><p>Modular Logic Studio V2.2</p>
+                        </button>
                     </form>
                 </nav>
             </div>
 
-            <!-- Digitaler Besuchszähler in der Sidebar -->
-            <!-- <div class="sidebar-section"> -->
-                <!-- <h3 class="sidebar-title">Free Space</h3> -->
-            <!-- </div> -->
-
-            <!-- Modulare Cyber Tools Quicklinks -->
+            <!-- Hyper Links -->
             <div class="sidebar-section">
                 <h3 class="sidebar-title">Hyper Links</h3>
                 <ul class="tools-list">
@@ -77,8 +895,8 @@
             <!-- System Info Box -->
             <div class="sidebar-section system-info-box">
                 <h3 class="sidebar-title">NODE DETAILS</h3>
-                <p><i class="fa-solid fa-lock" style="color:var(--neon-pink)"></i> Security: <strong>Level Alpha</strong></p>
-                <p><i class="fa-solid fa-server" style="color:var(--neon-cyan)"></i> Core Node: <strong>Active</strong></p>
+                <p><i class="fa-solid fa-lock" style="color:var(--bordeaux);"></i> Security: <strong>Level Omega</strong></p>
+                <p><i class="fa-solid fa-server" style="color:var(--steel-light);"></i> Core Node: <strong>Active</strong></p>
             </div>
         </aside>
 
@@ -100,7 +918,7 @@
 
             <!-- TAB 2: ADMIN TERMINAL (Geschützt durch PIN & Login) -->
             <section id="admin-tab" class="tab-content">
-                
+
                 <!-- Admin Authentifizierung (Anzeige wenn nicht eingeloggt) -->
                 <div id="admin-login-view" class="cyber-card">
                     <h2 class="card-title"><i class="fa-solid fa-key"></i> EMPLOYEE AUTHENTIFIZIERUNG</h2>
@@ -123,11 +941,11 @@
 
                 <!-- Admin Dashboard (Anzeige wenn erfolgreich eingeloggt) -->
                 <div id="admin-dashboard-view" class="admin-dashboard">
-                    
+
                     <!-- Admin Control Status-Bar -->
                     <div class="admin-status-bar">
                         <div>
-                            <span class="status-label"><i class="fa-solid fa-user-astronaut"></i> EINGELOGGT ALS:</span> 
+                            <span class="status-label"><i class="fa-solid fa-user-astronaut"></i> EINGELOGGT ALS:</span>
                             <span id="current-admin-name" class="status-admin-name">-</span>
                         </div>
                         <button id="admin-logout-btn" class="cyber-button cyber-button-danger">
@@ -143,10 +961,10 @@
                         <div class="syntax-helper-content">
                             <div class="syntax-item"><span>Link:</span> <code>Name.link("https://url.de")</code></div>
                             <div class="syntax-item"><span>Bild:</span> <code>Bild("https://url.de/bild.jpg")</code></div>
-                            <div class="syntax-item"><span>Überschrift:</span> <code>Überschrift(#00f3ff, 22, "Titel")</code></div>
-                            <div class="syntax-item"><span>Farbe & Größe:</span> <code>Farbe(#ff007f, "Text")</code> | <code>Größe(18, "Text")</code></div>
+                            <div class="syntax-item"><span>Überschrift:</span> <code>Überschrift(#94a3b8, 22, "Titel")</code></div>
+                            <div class="syntax-item"><span>Farbe & Größe:</span> <code>Farbe(#cbd5e1, "Text")</code> | <code>Größe(18, "Text")</code></div>
                             <div class="syntax-item"><span>Stile:</span> <code>Fett("Text")</code> | <code>Unterstrichen("Text")</code> | <code>Durchgestrichen("Text")</code></div>
-                            <div class="syntax-item"><span>Effekte:</span> <code>NeonGlow(#00f3ff, "Text")</code> | <code>RgbText("Text")</code> | <code>Warnung("Text")</code></div>
+                            <div class="syntax-item"><span>Effekte:</span> <code>NeonGlow(#94a3b8, "Text")</code> | <code>RgbText("Text")</code> | <code>Warnung("Text")</code></div>
                         </div>
                     </div>
 
@@ -155,7 +973,7 @@
                         <h2 class="card-title" id="editor-title"><i class="fa-solid fa-pen-to-square"></i> NEUEN BEITRAG ERSTELLEN</h2>
                         <form id="post-editor-form" class="cyber-form">
                             <input type="hidden" id="editing-post-id" value="">
-                            
+
                             <div class="form-group">
                                 <label for="post-title-input">BEITRAGS-ÜBERSCHRIFT</label>
                                 <input type="text" id="post-title-input" class="cyber-input" placeholder="z.B. System Update v2.4" required>
@@ -250,10 +1068,10 @@
 
     <!-- Footer Bereich -->
     <footer class="cyber-footer">
-        <p>© 2026 DerRedGuardian Industries®. Alle Rechte vorbehalten. | Dark Purple Cyber Engine Node</p>
+        <p>© 2026 DerRedGuardian Industries®. Alle Rechte vorbehalten. | Heavy Metal Industrial Core</p>
     </footer>
 
-    <!-- Externe JavaScript-Datei -->
+    <!-- Externe JavaScript-Datei (unverändert) -->
     <script src="app.js"></script>
 </body>
 </html>
