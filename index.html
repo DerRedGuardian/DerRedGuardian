@@ -101,7 +101,7 @@
 
         /* Alle Inhalte über dem Hintergrund */
         body>* {
-            display: flex;
+            position: relative;
             z-index: 1;
         }
 
@@ -122,11 +122,6 @@
             margin-bottom: 2rem;
             box-shadow: var(--shadow-heavy), inset 0 1px 0 rgba(148, 163, 184, 0.1);
             border-radius: 4px 4px 0 0;
-        }
-
-        .hr {
-            color:var(--steel-border);
-            height:3px;
         }
 
         .header-container {
@@ -430,6 +425,19 @@
         }
         .card-description strong {
             color: var(--steel-light);
+        }
+
+        /* ============================================================
+           HR – horizontale Trennlinie (oben/unten)
+           ============================================================ */
+        .hr {
+            display: block;
+            width: 100%;
+            height: 0;
+            border: none;
+            border-top: 3px solid var(--steel-border);
+            margin: 2rem 0;
+            opacity: 0.6;
         }
 
         /* ============================================================
@@ -1032,7 +1040,10 @@
                             </div>
                         </form>
                     </div>
-                    <hr class"hr">
+
+                    <!-- Horizontale Trennlinie (oben/unten) -->
+                    <hr class="hr">
+
                     <!-- Beiträge Verwalten (Bearbeiten & Löschen) -->
                     <div class="cyber-card">
                         <h2 class="card-title"><i class="fa-solid fa-list-check"></i> BEITRÄGE BEARBEITEN / LÖSCHEN</h2>
