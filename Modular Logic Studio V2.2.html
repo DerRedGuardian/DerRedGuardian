@@ -1,0 +1,2225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Modular Logic Studio V2</title>
+  <style>
+  :root {
+    --bg-color: #121212;
+    --grid-color: #1f1f1f;
+    --panel-bg: #1e1e1e;
+    --border-color: #333333;
+    --text-color: #aaaaaa;
+    --text-light: #ffffff;
+    --accent-blue: #007acc;
+    --accent-orange: #ff8c00;
+    --accent-green: #34c759;
+    --node-bg: #252526;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
+
+  body {
+    background-color: var(--bg-color); color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column;
+  }
+
+  header {
+    height: auto; min-height: 45px; background-color: var(--panel-bg);
+    border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap;
+    align-items: center; justify-content:space-between; padding: 10px 15px; z-index: 20;
+  }
+
+  h1 { font-size: 13px; color: var(--text-light); font-weight: 600; margin-right: 15px; display: flex; align-items: center; gap: 10px;}
+  #Logo {
+    position: absolute;
+    top: 15px;
+    left: 32%;
+    font-weight: 700;
+    font-size: 14px;
+    color: rgb(110,10,10);
+    text-decoration: underline;
+    text-shadow: 0px 0px 3px rgb(100,0,0);
+  }
+  @media (max-width: 800px) {
+    #Logo {
+      position: relative;
+      top: 0;
+      left: 0;
+      font-weight: 700;
+      font-size: 14px;
+      color: rgb(110,10,10);
+      text-decoration: underline;
+      text-shadow: 0px 0px 3px rgb(100,0,0);
+    }
+  }
+
+  .mode-badge {
+    top: 5px;
+    left: 14px;
+    position: absolute;
+    background: var(--accent-orange);
+    color: #000; padding: 1px 3px;
+    border-radius: 2px;
+    font-size: 5px;
+    font-weight: bold;
+    display: none;
+  }
+  .mode-badge.active { display: inline-block; }
+
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .actions button {
+    background-color: #2d2d2d; color: var(--text-light); border: 1px solid var(--border-color);
+    padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.1s;
+  }
+  .actions button:hover { background-color: #3d3d3d; }
+  .actions button.primary { background-color: var(--accent-blue); border-color: #0062a3; }
+  .actions button.primary:hover { background-color: #008be8; }
+  .actions button.success { background-color: #2ea043; border-color: #2ea043; }
+  .actions button.success:hover { background-color: #3fb950; }
+  .actions button.warning { background-color: var(--accent-orange); border-color: #d17300; color: #fff; display: none; }
+  .actions button.warning.active { display: inline-block; }
+
+  .main-container { flex: 1; display: flex; flex-direction: row; position: relative; overflow: hidden; }
+
+  #btn-builder-exit { display: none; }
+
+  sidebar {
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+    border-bottom: none;
+    border-right: 1px solid var(--border-color);
+    flex-direction: column;
+    padding: 0px 0px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 600px) {
+    .main-container {
+      flex-direction: column !important;
+      overflow: hidden !important;
+    }
+    sidebar {
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      height: 70px !important;
+      min-height: 70px !important;
+      max-height: 70px !important;
+      border-right: none !important;
+      border-bottom: 1px solid var(--border-color) !important;
+      flex-direction: row !important;
+      padding: 0px 0px !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      touch-action: pan-x !important;
+      -webkit-overflow-scrolling: touch !important;
+      flex-shrink: 0 !important;
+    }
+    .modulauswahl-container {
+      display: flex !important;
+      flex-direction: row !important;
+      padding: 20px;
+      height: 100% !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      align-items: center !important;
+      gap: 10px !important;
+      flex-wrap: nowrap !important;
+      width: max-content !important;
+      touch-action: pan-x !important;
+    }
+    .modulauswahl-container > * {
+      flex-shrink: 0 !important;
+      touch-action: pan-x !important;
+    }
+    .toolbox-separator {
+      background-color: var(--border-color) !important;
+      width: 1px !important;
+      min-width: 3px !important;
+      height: 45px !important;
+      margin: 0 4px !important;
+      flex-shrink: 0 !important;
+    }
+  }
+
+  .modulauswahl-container {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    height: max-content;
+    touch-action: pan-x;
+  }
+  .toolbox-separator {
+    height: 1px;
+    min-height: 3px;
+    width: 45px;
+    margin: 4px 0;
+    flex-shrink: 0;
+    background-color: var(--border-color);
+  }
+
+  .toolbox-item {
+    width: 42px; height: 42px; background-color: #2d2d2d; border: 1px solid var(--border-color);
+    border-radius: 8px; cursor: grab; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; position: relative; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .toolbox-item:hover { border-color: #666; background-color: #3a3a3a; transform: scale(1.05); }
+  .toolbox-item::after {
+    content: attr(data-tooltip); position: absolute; left: 52px; top: 50%; transform: translateY(-50%);
+    background: #000; color: #fff; padding: 4px 8px; font-size: 11px; border-radius: 4px;
+    white-space: nowrap; opacity: 0; pointer-events: none; z-index: 100;
+  }
+  @media (max-width: 600px) {
+    .toolbox-item::after {
+      left: 50%; top: -30px; transform: translateX(-50%);
+    }
+  }
+  .toolbox-item:hover::after { opacity: 1; }
+
+  .custom-mod-delete {
+    position: absolute; top: -5px; right: -5px; width: 16px; height: 16px;
+    background-color: #ff453a; color: white; border-radius: 50%;
+    font-size: 12px; font-weight: bold; line-height: 16px; text-align: center;
+    cursor: pointer; z-index: 10; border: 1px solid #aa0000;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .custom-mod-delete:hover { transform: scale(1.2); background-color: #ff1a1a; }
+
+  #workspace {
+    flex: 1; position: relative; overflow: hidden; background-color: var(--bg-color); cursor: grab;
+    background-size: 25px 25px; background-image: linear-gradient(to right, var(--grid-color) 1px, transparent 1px), linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+  }
+  #workspace:active { cursor: grabbing; }
+
+  #workspace-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+  #cable-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 1; }
+
+  .node {
+    position: absolute;
+    background-color: var(--node-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px; min-width: 130px;
+    height: auto;
+    min-height: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+  }
+  .node.selected { border-color: #888; background-color: #2a2a2b; z-index: 9; box-shadow: 0 6px 16px rgba(0,0,0,0.6); }
+  .node.builder-spec { border-color: var(--accent-orange); }
+
+  .node-header {
+    background-color: rgba(0,0,0,0.2); padding: 6px 10px; font-size: 11px; font-weight: bold;
+    color: var(--text-light); border-bottom: 1px solid var(--border-color); border-radius: 5px 5px 0 0;
+    display: flex; justify-content: space-between; align-items: center; cursor: move;
+  }
+
+  .node-controls { display: flex; gap: 8px; align-items: center; }
+  .node-opt { color: #aaa; cursor: pointer; font-size: 12px; }
+  .node-opt:hover { color: var(--accent-orange); }
+  .node-delete { color: #ff453a; cursor: pointer; font-weight: bold; font-size: 14px; }
+
+  .node-content {
+    padding:10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: calc(var(--node-min-height, 40px) + 14px);
+  }
+
+  .node-ports { display: flex; justify-content: space-between; position: relative; margin-top: -4px; margin-bottom: -4px; height: 0; width: 100%; pointer-events: none; }
+  .port-column {
+    display: flex;
+    flex-direction: column; gap: 14px;
+    position: absolute;
+    pointer-events: auto;
+    z-index: 5;
+    top: 14px;
+  }
+  .port-column.inputs { left: -7px; align-items: flex-start; }
+  .port-column.outputs { right: -7px; align-items: flex-end; }
+
+  .port { width: 14px; height: 14px; border-radius: 50%; background-color: #555; border: 2px solid #252526; cursor: crosshair; position: relative; transition: box-shadow 0.15s, background-color 0.1s; }
+  .port:hover { transform: scale(1.2); }
+  .port.type-boolean { background-color: var(--accent-blue); }
+  .port.type-number { background-color: var(--accent-orange); }
+  .port.connected { box-shadow: 0 0 0 2px #ffeb3b, 0 0 6px #ffeb3b; }
+
+  .port-label { position: absolute; font-size: 8px; color: #777; white-space: nowrap; top: -1px; pointer-events: none; }
+  .inputs .port-label { left: 16px; }
+  .outputs .port-label { right: 16px; }
+
+  .matrix-ports-grid { display: grid; grid-template-columns: repeat(8, 14px); grid-template-rows: repeat(8, 14px); gap: 2px; margin-top: 6px; padding: 4px; background: rgba(0,0,0,0.15); border-radius: 4px; border: 1px dashed #3c3c3c; }
+
+  .ui-btn-el { background: #333; border: 1px solid #444; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: 60%; font-size: 11px; text-align: left;}
+  .ui-btn-el:hover { background-color: #444; }
+  .ui-slider-container { width: 90%; text-align: center; display: flex; align-items: center; justify-content:space-between;}
+  .ui-slider-el { width: 90%; accent-color: var(--accent-orange); cursor: pointer; }
+  .ui-value-disp { font-size: 11px; color: var(--accent-orange); font-family: monospace; }
+
+  .ui-keybtn-wrapper { display: flex; justify-content:space-between; gap: 4px; width: 80%; align-items: center; }
+  .ui-keybtn-row { display: flex; justify-content:space-between; gap: 4px; width: 90%; align-items: center;  }
+  .ui-key-input { width: 65px; background: #111; color: var(--accent-orange); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 4px; font-size: 10px; text-align: center; font-family: monospace; }
+  .ui-help-btn { background: #333; color: #fff; border: 1px solid #555; border-radius: 50%; width: 18px; height: 18px; line-height: 16px; font-size: 10px; cursor: pointer; text-align: center; }
+  .ui-help-btn:hover { background: var(--accent-orange); color: #000; }
+
+  .logic-display { font-size: 13px; font-weight: bold; font-family: monospace; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.2); }
+  .logic-display.val-1 { color: var(--accent-green); text-shadow: 0 0 4px rgba(52,199,89,0.4); }
+  .logic-display.val-0 { color: #ff453a; }
+
+  .matrix-grid { display: grid; grid-template-columns: repeat(8, 14px); grid-template-rows: repeat(8, 14px); gap: 2px; background: #000; padding: 4px; border-radius: 4px; }
+  .matrix-pixel { background-color: #151515; border-radius: 1px; }
+  .matrix-pixel.active { background-color: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
+
+  .scope-canvas { background: #030303; border: 1px solid var(--border-color); border-radius: 4px; width: 110px; height: 45px; }
+  .gauge-canvas { background: #050505; border: 1px solid var(--border-color); border-radius: 4px; margin-top: 4px; }
+
+  .disp-led-el { width: 100%; height: 100%; border-radius: 50%; background-color: #222; border: 2px solid #111; box-shadow: inset 0 2px 10px rgba(0,0,0,0.6); transition: all 0.05s ease-in-out; margin-top: 8px }
+  .disp-led-el.on { background-color: #ffffff; border-color: #bbbbbb; box-shadow: 0 0 15px #eeeeee, inset 0 2px 10px rgba(255,255,255,0.5); }
+  .disp-val-el { font-size: 22px; font-weight: bold; font-family: 'Courier New', Courier, monospace; color: var(--accent-orange); background: #000; padding: 6px 12px; border-radius: 4px; border: 1px inset #444; text-align: center; min-width: 90px; text-shadow: 0 0 5px rgba(255, 140, 0, 0.4); }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 100; pointer-events: auto; }
+  .modal-content { background: var(--panel-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; width: 320px; max-width: 90vw; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 12px; }
+  .modal-content h3 { color: var(--text-light); font-size: 15px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+  .modal-content label { font-size: 12px; color: var(--text-color); display: flex; flex-direction: column; gap: 4px; }
+  .modal-content input, .modal-content select { background: #111; color: var(--text-light); border: 1px solid var(--border-color); padding: 6px 8px; border-radius: 4px; font-family: monospace; font-size: 12px; width: 100%; }
+  .modal-content p { font-size: 12px; color: #aaa; line-height: 1.5; margin: 0; }
+  .modal-content ul { font-size: 12px; color: #aaa; padding-left: 20px; margin: 4px 0; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+  .modal-actions button { background: #333; color: white; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  .modal-actions button:hover { background: #444; }
+  .modal-actions button.save { background: var(--accent-blue); border-color: #0062a3; }
+
+  .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Modular Logic Studio <span id="mode-indicator" class="mode-badge">MODUL BAU MODUS</span></h1>
+    <a id="Logo" href="https://derredguardian.de/">DerRedGuardian INDUSTRIES®</a>
+
+    <div class="actions">
+      <button id="btn-builder-toggle" class="success" onclick="toggleBuilderMode()">+ Modul Bauen</button>
+      <button id="btn-builder-save" class="warning" onclick="saveVisualModule()">Modul speichern & schließen</button>
+      <button onclick="clearWorkspace()">Leeren</button>
+      <button id="btn-export" class="primary" onclick="exportToStandaloneHTML()">HTML export</button>
+      <button id="btn-builder-exit" onclick="exitBuilder()">🔙</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <sidebar id="sidebar">
+      <div class="modulauswahl-container" id="toolbox-container"></div>
+    </sidebar>
+
+    <div id="workspace">
+      <div id="workspace-content"></div>
+      <canvas id="cable-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Modal für Inline-Konfiguration -->
+  <div id="config-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 id="cfg-title">Einstellungen</h3>
+      <div id="cfg-body" style="display:flex; flex-direction:column; gap:8px;"></div>
+      <div class="modal-actions">
+        <button onclick="closeConfigModal()">Abbrechen</button>
+        <button class="save" onclick="saveConfigModal()">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal für Modulnamen (Builder) -->
+  <div id="modulname-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Neues Modul speichern</h3>
+      <label>Modulname:
+        <input type="text" id="modulname-input" value="MyCustomMod" placeholder="Namen eingeben...">
+      </label>
+      <div class="modal-actions">
+        <button onclick="closeModulnameModal()">Abbrechen</button>
+        <button class="save" onclick="saveModulnameModal()">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal für Key-Button Hilfe -->
+  <div id="keyhelp-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Key‑Button Hilfe</h3>
+      <p>Du kannst diesem Button eine beliebige Taste zuweisen, indem du in das Textfeld klickst und dann die gewünschte Taste drückst.</p>
+      <p><strong>Wichtige Hinweise:</strong></p>
+      <ul>
+        <li>Vermeide Tasten, die von deinem Browser oder Betriebssystem belegt sind (z.B. <kbd>F1</kbd>, <kbd>Alt</kbd>, <kbd>Strg</kbd>, <kbd>Tab</kbd>, <kbd>Esc</kbd>).</li>
+        <li>Die Taste <kbd>Space</kbd> wird als <code>Space</code> erkannt – du kannst sie verwenden, beachte aber, dass sie auch zum Scrollen genutzt wird.</li>
+        <li>Du kannst auch Kombinationen wie <kbd>Shift+A</kbd> verwenden – die Eingabe erkennt das jeweilige Zeichen.</li>
+        <li>Nach dem Drücken der Taste wird der Name automatisch im Feld angezeigt.</li>
+      </ul>
+      <div class="modal-actions">
+        <button class="save" onclick="closeKeyHelpModal()">Verstanden</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal für allgemeine Nachrichten (ersetzt alert) -->
+  <div id="message-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 id="msg-title">Hinweis</h3>
+      <p id="msg-text"></p>
+      <div class="modal-actions">
+        <button class="save" onclick="closeMessageModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal für Bestätigung (ersetzt confirm) -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 id="confirm-title">Bestätigung</h3>
+      <p id="confirm-text"></p>
+      <div class="modal-actions">
+        <button id="confirm-cancel">Abbrechen</button>
+        <button class="save" id="confirm-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ============================================================
+  // DEBUG-FLAG für Custom-Module (auf true setzen für Logs)
+  // ============================================================
+  const DEBUG_CUSTOM = false;
+
+  // ============================================================
+  // 1.  AUDIO CONTEXT (Lazy Loading)
+  // ============================================================
+  let globalAudioCtx = null;
+  function initAudio() {
+    if (!globalAudioCtx) {
+      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (globalAudioCtx.state === 'suspended') globalAudioCtx.resume();
+  }
+  window.addEventListener('pointerdown', initAudio, { once: false });
+
+  // ============================================================
+  // 2.  SYSTEMZUSTAND & GLOBALE VARIABLEN
+  // ============================================================
+  let mainState = { nodes: [], connections: [], panX: 0, panY: 0 };
+  let currentState = mainState;
+  const customNodeTypes = {};
+  let isBuilderMode = false;
+  let draggedType = null;
+
+  let activeCable = null, hoveredCable = null;
+  let panX = 0, panY = 0, isPanning = false, startPanX = 0, startPanY = 0;
+
+  const workspace = document.getElementById('workspace');
+  const workspaceContent = document.getElementById('workspace-content');
+  const canvas = document.getElementById('cable-canvas');
+  const ctx = canvas.getContext('2d');
+  const toolboxContainer = document.getElementById('toolbox-container');
+
+  // ============================================================
+  // 3.  KONFIGURATION – FARBEN, NOTEN, TEMPLATES
+  // ============================================================
+  const DISTINCT_COLORS = ['#FF2D55','#FF9500','#FFCC00','#4CD964','#5AC8FA','#5856D6','#007AFF','#E0A899','#A4E786','#F39C12','#9B59B6','#1ABC9C'];
+
+  const NOTE_FREQS = {
+    "C0":16.35,"C#0":17.32,"D0":18.35,"D#0":19.45,"E0":20.60,"F0":21.83,"F#0":23.12,"G0":24.50,"G#0":25.96,"A0":27.50,"A#0":29.14,"B0":30.87,
+    "C1":32.70,"C#1":34.65,"D1":36.71,"D#1":38.89,"E1":41.20,"F1":43.65,"F#1":46.25,"G1":49.00,"G#1":51.91,"A1":55.00,"A#1":58.27,"B1":61.74,
+    "C2":65.41,"C#2":69.30,"D2":73.42,"D#2":77.78,"E2":82.41,"F2":87.31,"F#2":92.50,"G2":98.00,"G#2":103.83,"A2":110.00,"A#2":116.54,"B2":123.47,
+    "C3":130.81,"C#3":138.59,"D3":146.83,"D#3":155.56,"E3":164.81,"F3":174.61,"F#3":185.00,"G3":196.00,"G#3":207.65,"A3":220.00,"A#3":233.08,"B3":246.94,
+    "C4":261.63,"C#4":277.18,"D4":293.66,"D#4":311.13,"E4":329.63,"F4":349.23,"F#4":369.99,"G4":392.00,"G#4":415.30,"A4":440.00,"A#4":466.16,"B4":493.88,
+    "C5":523.25,"C#5":554.37,"D5":587.33,"D#5":622.25,"E5":659.25,"F5":698.46,"F#5":739.99,"G5":783.99,"G#5":830.61,"A5":880.00,"A#5":932.33,"B5":987.77,
+    "C6":1046.50,"C#6":1109.73,"D6":1174.66,"D#6":1244.51,"E6":1318.51,"F6":1396.91,"F#6":1479.98,"G6":1567.98,"G#6":1661.22,"A6":1760.00,"A#6":1864.66,"B6":1975.53,
+    "C7":2093.00,"C#7":2217.46,"D7":2349.32,"D#7":2489.02,"E7":2637.02,"F7":2793.83,"F#7":2959.96,"G7":3135.96,"G#7":3322.44,"A7":3520.00,"A#7":3729.31,"B7":3951.07,
+    "C8":4186.01,"C#8":4434.92,"D8":4698.63,"D#8":4978.03,"E8":5274.04,"F8":5587.65,"F#8":5919.91,"G8":6271.93,"G#8":6644.88,"A8":7040.00,"A#8":7458.62,"B8":7902.13
+  };
+
+  // Kern-Templates (alle eingebauten Module)
+  const CORE_TEMPLATES = {
+    'UI_BUTTON': { title: 'Button', cat: 'ui', icon: '🔘', inputs: [], outputs: [{ name: 'out', type: 'boolean' }] },
+    'UI_KEY_BUTTON': { title: 'Key-Button', cat: 'ui', icon: '⌨️', inputs: [], outputs: [{ name: 'out', type: 'boolean' }] },
+    'UI_SLIDER': { title: 'Slider', cat: 'ui', icon: '🎚️', inputs: [], outputs: [{ name: 'val', type: 'number' }] },
+
+    'LOGIC_AND': { title: 'AND', cat: 'logic', icon: '＆', inputs: [{ name: 'inA', type: 'boolean' }, { name: 'inB', type: 'boolean' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_OR':  { title: 'OR',  cat: 'logic', icon: '｜', inputs: [{ name: 'inA', type: 'boolean' }, { name: 'inB', type: 'boolean' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_NOT': { title: 'NOT', cat: 'logic', icon: '￢', inputs: [{ name: 'in', type: 'boolean' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_XOR': { title: 'XOR', cat: 'logic', icon: '⊕', inputs: [{ name: 'inA', type: 'boolean' }, { name: 'inB', type: 'boolean' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_NAND':{ title: 'NAND', cat: 'logic', icon: '⊼', inputs: [{ name: 'inA', type: 'boolean' }, { name: 'inB', type: 'boolean' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_NOR': { title: 'NOR',  cat: 'logic', icon: '⊽', inputs: [{ name: 'inA', type: 'boolean' }, { name: 'inB', type: 'boolean' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_XNOR':{ title: 'XNOR', cat: 'logic', icon: '⊙', inputs: [{ name: 'inA', type: 'boolean' }, { name: 'inB', type: 'boolean' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_COMP':{ title: 'Comp (A > B)', cat: 'logic', icon: '⚖️', inputs: [{ name: 'valA', type: 'number' }, { name: 'valB', type: 'number' }], outputs: [{ name: 'out', type: 'boolean' }] },
+    'LOGIC_SR':  { title: 'SR-Latch (Set)', cat: 'logic', icon: '⏯️', inputs: [{ name: 'S', type: 'boolean' }, { name: 'R', type: 'boolean' }], outputs: [{ name: 'Q', type: 'boolean' }, { name: '!Q', type: 'boolean' }] },
+    'LOGIC_RS':  { title: 'RS-Latch (Reset)', cat: 'logic', icon: '▶️', inputs: [{ name: 'R', type: 'boolean' }, { name: 'S', type: 'boolean' }], outputs: [{ name: 'Q', type: 'boolean' }, { name: '!Q', type: 'boolean' }] },
+
+    'MATH_ADD':  { title: 'Addierer', cat: 'math', icon: '➕', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_SUB':  { title: 'Subtrahierer', cat: 'math', icon: '➖', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_MUL':  { title: 'Multiplizierer', cat: 'math', icon: '✖️', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_DIV':  { title: 'Dividierer', cat: 'math', icon: '➗', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_MOD':  { title: 'Modulo', cat: 'math', icon: '%', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_ABS':  { title: 'Absolut', cat: 'math', icon: '|x|', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_MIN':  { title: 'Minimum', cat: 'math', icon: '∨', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_MAX':  { title: 'Maximum', cat: 'math', icon: '∧', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_POW':  { title: 'Potenz', cat: 'math', icon: 'Xⁿ', inputs: [{ name: 'A', type: 'number' }, { name: 'B', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_SQRT': { title: 'Wurzel', cat: 'math', icon: '√', inputs: [{ name: 'A', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_SIN':  { title: 'Sinus', cat: 'math', icon: '∿', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_COS':  { title: 'Cosinus', cat: 'math', icon: '∿', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_TAN':  { title: 'Tangens', cat: 'math', icon: '∿', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_ASIN': { title: 'ArcSin', cat: 'math', icon: '∿⁻¹', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_ACOS': { title: 'ArcCos', cat: 'math', icon: '∿⁻¹', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_ATAN': { title: 'ArcTan', cat: 'math', icon: '∿⁻¹', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_ROUND':{ title: 'Runden', cat: 'math', icon: '≈', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'MATH_TRANSISTOR': { title: 'A-Transistor', cat: 'math', icon: 'T', inputs: [{ name: 'in', type: 'number' }, { name: 'gate', type: 'boolean' }], outputs: [{ name: 'out', type: 'number' }] },
+
+    'CONV_ADC':  { title: 'ADC 8-Bit', cat: 'conv', icon: '⤵️', inputs: [{ name: 'val', type: 'number' }], outputs: [{name:'b0',type:'boolean'},{name:'b1',type:'boolean'},{name:'b2',type:'boolean'},{name:'b3',type:'boolean'},{name:'b4',type:'boolean'},{name:'b5',type:'boolean'},{name:'b6',type:'boolean'},{name:'b7',type:'boolean'}] },
+    'CONV_DAC':  { title: 'DAC 8-Bit', cat: 'conv', icon: '⤴️', inputs: [{name:'b0',type:'boolean'},{name:'b1',type:'boolean'},{name:'b2',type:'boolean'},{name:'b3',type:'boolean'},{name:'b4',type:'boolean'},{name:'b5',type:'boolean'},{name:'b6',type:'boolean'},{name:'b7',type:'boolean'}], outputs: [{ name: 'val', type: 'number' }] },
+
+    'MUSIC_NOTE':{ title: 'Note', cat: 'gen', icon: '🎵', inputs: [], outputs: [{ name: 'freq', type: 'number' }] },
+    'MUSIC_TONE':{ title: 'Tone Gen', cat: 'gen', icon: '🔊', inputs: [{ name: 'freq', type: 'number' }, { name: 'vol', type: 'number' }], outputs: [] },
+    'ANALOG_SIN': { title: 'Sinus Gen', cat: 'gen', icon: '🌊', inputs: [{ name: 'freq', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+    'ANALOG_RAND': { title: 'Zufall Gen', cat: 'gen', icon: '🎲', inputs: [{ name: 'trigger', type: 'boolean' }], outputs: [{ name: 'out', type: 'number' }] },
+    'UTIL_CLOCK': { title: 'Clock', cat: 'gen', icon: '⏱️', inputs: [{ name: 'ms', type: 'number' }], outputs: [{ name: 'pulse', type: 'boolean' }] },
+    'UTIL_DELAY': { title: 'Delay', cat: 'gen', icon: '⏳', inputs: [{ name: 'in', type: 'number' }], outputs: [{ name: 'out', type: 'number' }] },
+
+    'DISP_LED':   { title: 'LED', cat: 'disp', icon: '🔴', inputs: [{ name: 'in', type: 'boolean' }], outputs: [] },
+    'DISP_VAL':   { title: 'Zahlenwert', cat: 'disp', icon: '📟', inputs: [{ name: 'in', type: 'number' }], outputs: [] },
+    'DISP_GAUGE': { title: 'Gauge', cat: 'disp', icon: '🧭', inputs: [{ name: 'in', type: 'number' }], outputs: [] },
+    'DISP_MATRIX':{ title: '8x8 Matrix', cat: 'disp', icon: '🟩', inputs: [], outputs: [] },
+    'DISP_SCOPE': { title: 'Scope', cat: 'disp', icon: '📊', inputs: [{ name: 'in', type: 'number' }], outputs: [] },
+
+    'BUILDER_IN': { title: 'Modul Eingang', cat: 'builder', icon: '📥', inputs: [], outputs: [{ name: 'val', type: 'number' }] },
+    'BUILDER_OUT':{ title: 'Modul Ausgang', cat: 'builder', icon: '📤', inputs: [{ name: 'val', type: 'number' }], outputs: [] },
+  };
+  // Matrix hat 64 Eingänge
+  for(let i=0; i<64; i++) CORE_TEMPLATES['DISP_MATRIX'].inputs.push({ name: `p${i}`, type: 'boolean' });
+
+  function getTemplate(type) { return CORE_TEMPLATES[type] || customNodeTypes[type]; }
+
+  // ============================================================
+  // 4.  HILFSFUNKTIONEN FÜR BUILDER-PIN-NAMEN
+  // ============================================================
+  function getNextPinName(type, existingNodes) {
+    // type: 'in' oder 'out'
+    const prefix = type === 'in' ? 'in' : 'out';
+    const existing = existingNodes
+      .filter(n => n.type === (type === 'in' ? 'BUILDER_IN' : 'BUILDER_OUT'))
+      .map(n => n.internalState.pinName || '')
+      .filter(name => name.startsWith(prefix))
+      .map(name => name.substring(prefix.length))
+      .filter(s => s.length === 1 && s >= 'A' && s <= 'Z');
+
+    // Finde den kleinsten freien Buchstaben
+    for (let i = 0; i < 26; i++) {
+      const letter = String.fromCharCode(65 + i); // 'A'..'Z'
+      if (!existing.includes(letter)) {
+        return prefix + letter;
+      }
+    }
+    // Falls alle A-Z vergeben sind, erweitern mit AA, AB, ...
+    let idx = 1;
+    while (true) {
+      const name = prefix + String.fromCharCode(65 + (idx % 26)).repeat(Math.floor(idx / 26) + 1);
+      if (!existingNodes.some(n => n.internalState.pinName === name)) {
+        return name;
+      }
+      idx++;
+    }
+  }
+
+  // ============================================================
+  // 5.  TOOLBOX RENDERING
+  // ============================================================
+  function renderToolbox() {
+    toolboxContainer.innerHTML = '';
+    let lastCat = null;
+
+    const renderItem = (key, t) => {
+      if(lastCat && lastCat !== t.cat) {
+        const sep = document.createElement('div');
+        sep.className = 'toolbox-separator';
+        toolboxContainer.appendChild(sep);
+      }
+      lastCat = t.cat;
+
+      const item = document.createElement('div');
+      item.className = 'toolbox-item';
+      item.draggable = true;
+      item.setAttribute('data-type', key);
+      item.setAttribute('data-tooltip', t.title);
+      item.title = t.title;
+      item.innerText = t.icon || '📦';
+
+      item.addEventListener('dragstart', (e) => { draggedType = key; });
+      item.addEventListener('pointerdown', (e) => { draggedType = key; });
+
+      // Löschknopf für Custom-Module – jetzt mit Modal
+      if(key.startsWith('CUSTOM_')) {
+        const delBtn = document.createElement('div');
+        delBtn.innerHTML = '&times;';
+        delBtn.className = 'custom-mod-delete';
+        delBtn.title = "Modul löschen";
+        delBtn.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          showConfirm(
+            `Modul "${t.title}" löschen?`,
+            'Möchtest du dieses gespeicherte Modul wirklich löschen?',
+            () => {
+              delete customNodeTypes[key];
+              delete CORE_TEMPLATES[key];
+              renderToolbox();
+            }
+          );
+        });
+        item.appendChild(delBtn);
+      }
+
+      toolboxContainer.appendChild(item);
+    };
+
+    if (isBuilderMode) {
+      // Im Builder-Modus nur Builder-spezifische und Logik/Mathe-Module
+      renderItem('BUILDER_IN', CORE_TEMPLATES['BUILDER_IN']);
+      renderItem('BUILDER_OUT', CORE_TEMPLATES['BUILDER_OUT']);
+      Object.keys(CORE_TEMPLATES).forEach(k => {
+        if(['logic','math','conv'].includes(CORE_TEMPLATES[k].cat)) renderItem(k, CORE_TEMPLATES[k]);
+      });
+    } else {
+      // Normalmodus: Alle Core-Templates außer 'builder'
+      const renderedKeys = new Set();
+      Object.keys(CORE_TEMPLATES).forEach(k => {
+        if(CORE_TEMPLATES[k].cat !== 'builder') {
+          renderItem(k, CORE_TEMPLATES[k]);
+          renderedKeys.add(k);
+        }
+      });
+      // Custom-Module nur hinzufügen, wenn sie nicht bereits in CORE_TEMPLATES sind
+      Object.keys(customNodeTypes).forEach(k => {
+        if(!renderedKeys.has(k)) {
+          renderItem(k, customNodeTypes[k]);
+        }
+      });
+    }
+  }
+  renderToolbox();
+
+  // ============================================================
+  // 6.  PAN & DRAG & DROP (mit automatischer Benennung für Builder-Nodes)
+  // ============================================================
+  function applyPan() {
+    workspaceContent.style.transform = `translate(${panX}px, ${panY}px)`;
+    drawCables();
+  }
+
+  workspace.addEventListener('dragover', (e) => e.preventDefault());
+  workspace.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if(!draggedType) {
+      console.warn('Drop ohne draggedType');
+      return;
+    }
+    const rect = workspace.getBoundingClientRect();
+    const x = e.clientX - rect.left - panX - 65;
+    const y = e.clientY - rect.top - panY - 20;
+
+    // Bei Builder-Nodes automatisch Namen vergeben
+    let savedData = null;
+    if (draggedType === 'BUILDER_IN') {
+      const pinName = getNextPinName('in', currentState.nodes);
+      savedData = { pinName: pinName, pinType: 'number' };
+    } else if (draggedType === 'BUILDER_OUT') {
+      const pinName = getNextPinName('out', currentState.nodes);
+      savedData = { pinName: pinName, pinType: 'number' };
+    }
+
+    createNode(draggedType, x, y, null, savedData, currentState);
+    draggedType = null;
+  });
+
+  function isPointNearBezier(px, py, x1, y1, x2, y2, tolerance=8) {
+    const offset = Math.max(Math.abs(x2-x1)*0.5, 30);
+    for(let t=0; t<=1; t+=0.04) {
+      const cx = (1-t)**3*x1 + 3*(1-t)**2*t*(x1+offset) + 3*(1-t)*t**2*(x2-offset) + t**3*x2;
+      const cy = (1-t)**3*y1 + 3*(1-t)**2*t*y1 + 3*(1-t)*t**2*y2 + t**3*y2;
+      if(Math.hypot(px-cx, py-cy) <= tolerance) return true;
+    }
+    return false;
+  }
+
+  workspace.addEventListener('pointerdown', (e) => {
+    if(e.target !== workspace && e.target !== canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+
+    // Kabel durch Klick löschen
+    let clickedCableIndex = -1;
+    for(let i=0; i<currentState.connections.length; i++) {
+      const c = currentState.connections[i];
+      const pOut = getPortCoordinates(c.fromNode, c.fromPort, 'output');
+      const pIn  = getPortCoordinates(c.toNode,   c.toPort,   'input');
+      if(pOut && pIn && isPointNearBezier(mx,my, pOut.x,pOut.y, pIn.x,pIn.y)) {
+        clickedCableIndex = i;
+        break;
+      }
+    }
+    if(clickedCableIndex !== -1) {
+      currentState.connections.splice(clickedCableIndex, 1);
+      hoveredCable = null;
+      updatePortHighlights();
+      drawCables();
+      runSingleTick();
+      return;
+    }
+
+    isPanning = true;
+    workspace.setPointerCapture(e.pointerId);
+    startPanX = e.clientX - panX;
+    startPanY = e.clientY - panY;
+  });
+
+  workspace.addEventListener('pointermove', (e) => {
+    if(isPanning) {
+      panX = e.clientX - startPanX;
+      panY = e.clientY - startPanY;
+      applyPan();
+    }
+  });
+
+  workspace.addEventListener('pointerup', (e) => {
+    isPanning = false;
+    workspace.releasePointerCapture(e.pointerId);
+  });
+
+  function resizeCanvas() {
+    canvas.width = workspace.clientWidth;
+    canvas.height = workspace.clientHeight;
+    drawCables();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  setTimeout(resizeCanvas, 100);
+
+  canvas.addEventListener('pointermove', (e) => {
+    if(isPanning) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    let found = null;
+    currentState.connections.forEach(c => {
+      const pOut = getPortCoordinates(c.fromNode, c.fromPort, 'output');
+      const pIn  = getPortCoordinates(c.toNode,   c.toPort,   'input');
+      if(pOut && pIn && isPointNearBezier(mx,my, pOut.x,pOut.y, pIn.x,pIn.y)) found = c;
+    });
+    if(hoveredCable !== found) {
+      hoveredCable = found;
+      canvas.style.cursor = found ? 'no-drop' : 'default';
+      drawCables();
+    }
+  });
+
+  // ============================================================
+  // 7.  NODE LEBENSZYKLUS (erzeugen, rendern, löschen) – KORRIGIERT
+  // ============================================================
+  function createNode(type, x, y, id=null, savedData=null, targetState=mainState) {
+    const nodeID = id || type + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    const template = getTemplate(type);
+    if(!template) return;
+
+    // Korrekte Extraktion der internalState aus savedData
+    let internalState = {};
+    if (savedData) {
+      if (savedData.internalState) {
+        internalState = JSON.parse(JSON.stringify(savedData.internalState));
+      } else {
+        // Wenn savedData direkt die Eigenschaften enthält (wie beim Drop)
+        internalState = JSON.parse(JSON.stringify(savedData));
+      }
+    }
+
+    const nodeObj = {
+      id: nodeID,
+      type: type,
+      x: x,
+      y: y,
+      inputs: {},
+      outputs: {},
+      internalState: internalState
+    };
+
+    template.inputs.forEach(p => nodeObj.inputs[p.name] = 0);
+    template.outputs.forEach(p => nodeObj.outputs[p.name] = 0);
+
+    // Standard-Initialisierung, aber nur wenn nicht bereits gespeichert
+    if(type === 'UI_BUTTON' || type === 'UI_KEY_BUTTON') {
+      nodeObj.internalState.isToggle = nodeObj.internalState.isToggle ?? false;
+      nodeObj.internalState.toggleState = nodeObj.internalState.toggleState ?? 0;
+      if(type === 'UI_KEY_BUTTON') nodeObj.internalState.keyBind = nodeObj.internalState.keyBind ?? 'Space';
+    }
+    if(type === 'UI_SLIDER' || type === 'DISP_GAUGE') {
+      nodeObj.internalState.min = nodeObj.internalState.min ?? 0;
+      nodeObj.internalState.max = nodeObj.internalState.max ?? 100;
+      if(type === 'UI_SLIDER') {
+        nodeObj.outputs['val'] = nodeObj.internalState.val ?? nodeObj.internalState.min;
+      }
+    }
+    if(type === 'MUSIC_NOTE') {
+      nodeObj.internalState.note = nodeObj.internalState.note ?? 'C4';
+      nodeObj.outputs['freq'] = NOTE_FREQS[nodeObj.internalState.note];
+    }
+    if(type === 'MUSIC_TONE') {
+      nodeObj.internalState.waveType = nodeObj.internalState.waveType ?? 'sine';
+      nodeObj.internalState._lastFreq = null;
+      nodeObj.internalState._lastWaveType = null;
+    }
+    if(type === 'DISP_LED') {
+      nodeObj.internalState.color = nodeObj.internalState.color ?? '#ff0000';
+    }
+    if(type === 'UTIL_CLOCK') {
+      nodeObj.inputs['ms'] = nodeObj.internalState.ms ?? 1000;
+      nodeObj.internalState.lastTick = Date.now();
+      nodeObj.internalState.currentPulse = 0;
+    }
+    if(type === 'UTIL_DELAY') {
+      nodeObj.inputs['ticks'] = nodeObj.internalState.ticks ?? 10;
+      nodeObj.internalState.buffer = nodeObj.internalState.buffer ?? [];
+    }
+    if(type === 'LOGIC_SR' || type === 'LOGIC_RS') {
+      nodeObj.internalState.q = nodeObj.internalState.q ?? 0;
+    }
+    if(type === 'ANALOG_SIN') {
+      nodeObj.inputs['freq'] = nodeObj.internalState.freq ?? 2;
+      nodeObj.internalState.phase = nodeObj.internalState.phase ?? 0;
+    }
+    if(type === 'ANALOG_RAND') nodeObj.internalState.lastTrigger = 0;
+    if(type === 'DISP_SCOPE') {
+      nodeObj.internalState.history = nodeObj.internalState.history ?? new Array(100).fill(0);
+    }
+    if(type === 'BUILDER_IN' || type === 'BUILDER_OUT') {
+      nodeObj.internalState.pinName = nodeObj.internalState.pinName ?? (type==='BUILDER_IN' ? 'inA' : 'outA');
+      nodeObj.internalState.pinType = nodeObj.internalState.pinType ?? 'number';
+    }
+
+    if(type.startsWith('CUSTOM_')) {
+      // Sub-Nodes aus dem Template übernehmen (tief kopiert)
+      const templateObj = getTemplate(type);
+      if(templateObj) {
+        const rawSubNodes = templateObj.subNodes || [];
+        const rawSubConns = templateObj.subConnections || [];
+
+        // Sub-Nodes neu aufbauen und inputs/outputs initialisieren (behalte IDs)
+        nodeObj.internalState.subNodes = rawSubNodes.map(sub => {
+          const newSub = JSON.parse(JSON.stringify(sub));
+          const subTemplate = getTemplate(newSub.type);
+          let subInputs = {};
+          let subOutputs = {};
+          if(subTemplate) {
+            subTemplate.inputs.forEach(p => subInputs[p.name] = 0);
+            subTemplate.outputs.forEach(p => subOutputs[p.name] = 0);
+          }
+          // Für BUILDER_IN/OUT die Port-Namen durch den Pin-Namen ersetzen
+          if (newSub.type === 'BUILDER_IN') {
+            const pinName = newSub.internalState.pinName || 'val';
+            subOutputs = {};
+            subOutputs[pinName] = 0;
+          }
+          if (newSub.type === 'BUILDER_OUT') {
+            const pinName = newSub.internalState.pinName || 'val';
+            subInputs = {};
+            subInputs[pinName] = 0;
+          }
+          newSub.inputs = subInputs;
+          newSub.outputs = subOutputs;
+
+          // Spezielle Initialisierungen für bestimmte Typen
+          if(newSub.type === 'UTIL_CLOCK') {
+            newSub.internalState.lastTick = Date.now();
+            newSub.internalState.currentPulse = 0;
+          }
+          if(newSub.type === 'MUSIC_TONE') {
+            newSub.internalState._lastFreq = null;
+            newSub.internalState._lastWaveType = null;
+          }
+          return newSub;
+        });
+        // Sub-Verbindungen kopieren (IDs bleiben erhalten)
+        nodeObj.internalState.subConnections = JSON.parse(JSON.stringify(rawSubConns));
+      } else {
+        nodeObj.internalState.subNodes = [];
+        nodeObj.internalState.subConnections = [];
+      }
+    }
+
+    targetState.nodes.push(nodeObj);
+    if(targetState === currentState) renderNodeDOM(nodeObj, template);
+    return nodeObj;
+  }
+
+  function renderNodeDOM(node, template) {
+    const el = document.createElement('div');
+
+    // Spezifische Größen
+    if(node.type === 'UI_SLIDER') { el.style.width = '450px'; el.style.height = '64px'; }
+    if(node.type === 'UI_BUTTON') { el.style.width = '150px'; el.style.height = '64px'; }
+    if(node.type === 'UI_KEY_BUTTON') { el.style.width = '300px'; el.style.height = '64px'; }
+    if(node.type === 'DISP_LED') { el.style.width = '130px'; el.style.height = '160px'; }
+
+    el.className = 'node' + (node.type.startsWith('BUILDER_') ? ' builder-spec' : '');
+    el.id = node.id;
+    el.style.left = node.x + 'px';
+    el.style.top = node.y + 'px';
+
+    const inputCount = template.inputs ? template.inputs.length : 0;
+    const outputCount = template.outputs ? template.outputs.length : 0;
+    const maxPorts = Math.max(inputCount, outputCount);
+    if(node.type !== 'DISP_MATRIX' && maxPorts > 0) {
+      el.style.setProperty('--node-min-height', (maxPorts * 28) + 'px');
+    }
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'node-header';
+    header.innerHTML = `<span>${template.title}</span>`;
+
+    const ctrlContainer = document.createElement('div');
+    ctrlContainer.className = 'node-controls';
+    if(['UI_BUTTON','UI_KEY_BUTTON','UI_SLIDER','DISP_GAUGE','MUSIC_NOTE','MUSIC_TONE','BUILDER_IN','BUILDER_OUT','DISP_LED'].includes(node.type)) {
+      const opt = document.createElement('span');
+      opt.className = 'node-opt';
+      opt.innerHTML = '⚙️';
+      opt.addEventListener('pointerdown', (e) => { e.stopPropagation(); openConfigModal(node); });
+      ctrlContainer.appendChild(opt);
+    }
+    const del = document.createElement('span');
+    del.className = 'node-delete';
+    del.innerHTML = '&times;';
+    del.addEventListener('pointerdown', (e) => { e.stopPropagation(); deleteNode(node.id); });
+    ctrlContainer.appendChild(del);
+    header.appendChild(ctrlContainer);
+    el.appendChild(header);
+
+    // Ports
+    const portsContainer = document.createElement('div');
+    portsContainer.className = 'node-ports';
+    const inCol = document.createElement('div');
+    inCol.className = 'port-column inputs';
+    const outCol = document.createElement('div');
+    outCol.className = 'port-column outputs';
+
+    let dynInputs = template.inputs;
+    let dynOutputs = template.outputs;
+    if(node.type === 'BUILDER_IN') {
+      dynOutputs = [{ name: node.internalState.pinName || 'val', type: node.internalState.pinType || 'number' }];
+    }
+    if(node.type === 'BUILDER_OUT') {
+      dynInputs = [{ name: node.internalState.pinName || 'val', type: node.internalState.pinType || 'number' }];
+    }
+
+    if(node.type !== 'DISP_MATRIX') {
+      dynInputs.forEach(p => inCol.appendChild(createPortEl(node.id, p.name, p.type, 'input')));
+    }
+    dynOutputs.forEach(p => outCol.appendChild(createPortEl(node.id, p.name, p.type, 'output')));
+    portsContainer.appendChild(inCol);
+    portsContainer.appendChild(outCol);
+    el.appendChild(portsContainer);
+
+    // Inhalt
+    const content = document.createElement('div');
+    content.className = 'node-content';
+    buildNodeContent(node, content, template);
+    el.appendChild(content);
+
+    // Drag (Verschieben)
+    header.addEventListener('pointerdown', (e) => {
+      if(e.target.classList.contains('node-delete') || e.target.classList.contains('node-opt')) return;
+      el.setPointerCapture(e.pointerId);
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+      el.classList.add('selected');
+
+      const wRect = workspace.getBoundingClientRect();
+      const offsetX = e.clientX - (node.x + panX + wRect.left);
+      const offsetY = e.clientY - (node.y + panY + wRect.top);
+
+      const move = (ev) => {
+        node.x = ev.clientX - wRect.left - panX - offsetX;
+        node.y = ev.clientY - wRect.top  - panY - offsetY;
+        el.style.left = node.x + 'px';
+        el.style.top = node.y + 'px';
+        drawCables();
+      };
+      const up = () => {
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', up);
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+    });
+
+    workspaceContent.appendChild(el);
+    updateNodeHeaderDisplay(node);
+    setTimeout(() => updatePortHighlights(), 20);
+  }
+
+  function createPortEl(nodeId, name, type, direction) {
+    const pEl = document.createElement('div');
+    pEl.className = `port type-${type}`;
+    pEl.dataset.nodeId = nodeId;
+    pEl.dataset.portName = name;
+    pEl.dataset.portType = type;
+    pEl.dataset.direction = direction;
+    if(name.indexOf('p') !== 0) {
+      pEl.innerHTML = `<span class="port-label">${name}</span>`;
+    }
+    pEl.addEventListener('pointerdown', onPortPointerDown);
+    pEl.addEventListener('dblclick', (e) => {
+      const nId = e.target.dataset.nodeId, pName = e.target.dataset.portName, dir = e.target.dataset.direction;
+      currentState.connections = currentState.connections.filter(c =>
+        !( (dir==='output' && c.fromNode===nId && c.fromPort===pName) ||
+           (dir==='input'  && c.toNode===nId && c.toPort===pName) )
+      );
+      updatePortHighlights();
+      drawCables();
+      runSingleTick();
+    });
+    return pEl;
+  }
+
+  function buildNodeContent(node, container, template) {
+    // Für Custom-Module: Status-Punkt im Content
+    if(node.type.startsWith('CUSTOM_')) {
+      const status = document.createElement('div');
+      status.className = 'logic-display';
+      status.id = `disp_${node.id}`;
+      status.innerText = '●';
+      status.style.fontSize = '24px';
+      status.style.background = 'transparent';
+      status.style.padding = '0';
+      status.style.margin = '0';
+      status.style.color = '#555';
+      container.appendChild(status);
+      return;
+    }
+
+    if(node.type === 'UI_BUTTON') {
+      const btn = document.createElement('button');
+      btn.className = 'ui-btn-el';
+      btn.id = `btn_act_${node.id}`;
+      btn.innerText = node.outputs['out'] === 1 ? '🟢 - An' : '⚫ - Aus';
+
+      const update = () => {
+        btn.innerText = node.outputs['out'] === 1 ? '🟢 - An' : '⚫ - Aus';
+      };
+
+      btn.addEventListener('pointerdown', () => {
+        if(node.internalState.isToggle) {
+          node.internalState.toggleState = node.internalState.toggleState === 1 ? 0 : 1;
+          node.outputs['out'] = node.internalState.toggleState;
+        } else {
+          node.outputs['out'] = 1;
+        }
+        update();
+        runSingleTick();
+      });
+
+      const release = () => {
+        if(!node.internalState.isToggle) {
+          node.outputs['out'] = 0;
+          update();
+          runSingleTick();
+        }
+      };
+      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointerleave', release);
+      container.appendChild(btn);
+    }
+
+    else if(node.type === 'UI_KEY_BUTTON') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ui-keybtn-wrapper';
+      const btn = document.createElement('button');
+      btn.className = 'ui-btn-el';
+      btn.id = `btn_act_${node.id}`;
+      btn.innerText = node.outputs['out'] === 1 ? '🟢 - An' : '⚫ - Aus';
+
+      const trigger = (active) => {
+        if(node.internalState.isToggle) {
+          if(active) {
+            node.internalState.toggleState = node.internalState.toggleState === 1 ? 0 : 1;
+            node.outputs['out'] = node.internalState.toggleState;
+          }
+        } else {
+          node.outputs['out'] = active ? 1 : 0;
+        }
+        btn.innerText = node.outputs['out'] === 1 ? '🟢 - An' : '⚫ - Aus';
+        runSingleTick();
+      };
+
+      btn.addEventListener('pointerdown', () => trigger(true));
+      btn.addEventListener('pointerup', () => { if(!node.internalState.isToggle) trigger(false); });
+      btn.addEventListener('pointerleave', () => { if(!node.internalState.isToggle) trigger(false); });
+
+      const row = document.createElement('div');
+      row.className = 'ui-keybtn-row';
+      const keyInp = document.createElement('input');
+      keyInp.className = 'ui-key-input';
+      keyInp.value = node.internalState.keyBind;
+      keyInp.placeholder = 'Taste';
+      keyInp.addEventListener('keydown', (e) => {
+        e.preventDefault();
+        keyInp.value = e.code === 'Space' ? 'Space' : e.key;
+        node.internalState.keyBind = keyInp.value;
+      });
+      const helpBtn = document.createElement('button');
+      helpBtn.className = 'ui-help-btn';
+      helpBtn.innerText = '?';
+      helpBtn.onclick = () => { openKeyHelpModal(); };
+      row.appendChild(keyInp);
+      row.appendChild(helpBtn);
+      wrapper.appendChild(btn);
+      wrapper.appendChild(row);
+      container.appendChild(wrapper);
+    }
+
+    else if(node.type === 'UI_SLIDER') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ui-slider-container';
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.className = 'ui-slider-el';
+      slider.id = `sl_${node.id}`;
+      slider.min = node.internalState.min;
+      slider.max = node.internalState.max;
+      slider.step = "any";
+      slider.value = node.outputs['val'];
+      const disp = document.createElement('div');
+      disp.className = 'ui-value-disp';
+      disp.id = `sl_disp_${node.id}`;
+      disp.innerText = Number(slider.value).toFixed(1);
+
+      slider.addEventListener('input', (e) => {
+        node.outputs['val'] = parseFloat(e.target.value);
+        disp.innerText = node.outputs['val'].toFixed(1);
+        runSingleTick();
+      });
+      wrapper.appendChild(slider);
+      wrapper.appendChild(disp);
+      container.appendChild(wrapper);
+    }
+
+    else if(node.type.startsWith('LOGIC_') || node.type.startsWith('MATH_') ||
+            node.type === 'MUSIC_NOTE' || node.type.startsWith('BUILDER_')) {
+      const disp = document.createElement('div');
+      disp.className = 'logic-display val-0';
+      disp.id = `disp_${node.id}`;
+      disp.innerText = '0';
+      container.appendChild(disp);
+    }
+
+    else if(node.type === 'MUSIC_TONE') {
+      const disp = document.createElement('div');
+      disp.className = 'logic-display val-0';
+      disp.id = `disp_${node.id}`;
+      disp.innerText = "OFF";
+      container.appendChild(disp);
+    }
+
+    else if(node.type === 'UTIL_CLOCK' || node.type === 'ANALOG_SIN' || node.type === 'UTIL_DELAY') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ui-slider-container';
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.style.width = '60px';
+      inp.style.background = '#111';
+      inp.style.color = 'var(--accent-orange)';
+      inp.style.border = '1px solid var(--border-color)';
+      inp.style.textAlign = 'center';
+      const field = node.type === 'UTIL_CLOCK' ? 'ms' : (node.type === 'ANALOG_SIN' ? 'freq' : 'ticks');
+      inp.value = node.inputs[field];
+      inp.addEventListener('input', (e) => {
+        node.inputs[field] = Math.max(parseFloat(e.target.value) || 1, 1);
+        runSingleTick();
+      });
+      wrapper.appendChild(inp);
+      container.appendChild(wrapper);
+    }
+
+    else if(node.type === 'DISP_LED') {
+      const led = document.createElement('div');
+      led.className = 'disp-led-el';
+      led.id = `led_${node.id}`;
+      container.appendChild(led);
+    }
+
+    else if(node.type === 'DISP_VAL') {
+      const valEl = document.createElement('div');
+      valEl.className = 'disp-val-el';
+      valEl.id = `val_${node.id}`;
+      valEl.innerText = '0.00';
+      container.appendChild(valEl);
+    }
+
+    else if(node.type === 'DISP_GAUGE') {
+      const canvasEl = document.createElement('canvas');
+      canvasEl.className = 'gauge-canvas';
+      canvasEl.width = 110;
+      canvasEl.height = 65;
+      canvasEl.id = `gauge_canvas_${node.id}`;
+      container.appendChild(canvasEl);
+    }
+
+    else if(node.type === 'DISP_MATRIX') {
+      const grid = document.createElement('div');
+      grid.className = 'matrix-grid';
+      for(let i=0; i<64; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-pixel';
+        cell.id = `pixel_${node.id}_${i}`;
+        grid.appendChild(cell);
+      }
+      container.appendChild(grid);
+      const portsGrid = document.createElement('div');
+      portsGrid.className = 'matrix-ports-grid';
+      for(let i=0; i<64; i++) {
+        portsGrid.appendChild(createPortEl(node.id, `p${i}`, 'boolean', 'input'));
+      }
+      container.appendChild(portsGrid);
+    }
+
+    else if(node.type === 'DISP_SCOPE') {
+      const canvasEl = document.createElement('canvas');
+      canvasEl.className = 'scope-canvas';
+      canvasEl.width = 110;
+      canvasEl.height = 45;
+      canvasEl.id = `scope_canvas_${node.id}`;
+      container.appendChild(canvasEl);
+    }
+  }
+
+  function updateNodeHeaderDisplay(node) {
+    const hSpan = document.querySelector(`#${node.id} .node-header span`);
+    if(!hSpan) return;
+    if(node.type === 'UI_BUTTON') hSpan.innerText = node.internalState.isToggle ? 'Button (Schalter)' : 'Button (Taster)';
+    if(node.type === 'UI_KEY_BUTTON') hSpan.innerText = node.internalState.isToggle ? 'Key-Button (Schalter)' : 'Key-Button (Taster)';
+    if(node.type === 'UI_SLIDER') hSpan.innerText = `Slider (${node.internalState.min}:${node.internalState.max})`;
+    if(node.type === 'DISP_GAUGE') hSpan.innerText = `Gauge (${node.internalState.min}:${node.internalState.max})`;
+    if(node.type === 'MUSIC_NOTE') hSpan.innerText = `Note (${node.internalState.note})`;
+    if(node.type === 'BUILDER_IN') hSpan.innerText = `Input (${node.internalState.pinName})`;
+    if(node.type === 'BUILDER_OUT') hSpan.innerText = `Output (${node.internalState.pinName})`;
+  }
+
+  function deleteNode(id) {
+    const n = currentState.nodes.find(x => x.id === id);
+    if(n && n.internalState.osc) {
+      try { n.internalState.osc.stop(); } catch(e) {}
+      n.internalState.osc.disconnect();
+      if(n.internalState.gain) n.internalState.gain.disconnect();
+      n.internalState.osc = null;
+      n.internalState.gain = null;
+      n.internalState._lastFreq = null;
+      n.internalState._lastWaveType = null;
+    }
+    currentState.connections = currentState.connections.filter(c => c.fromNode !== id && c.toNode !== id);
+    currentState.nodes = currentState.nodes.filter(n => n.id !== id);
+    const dom = document.getElementById(id);
+    if(dom) dom.remove();
+    updatePortHighlights();
+    drawCables();
+  }
+
+  function clearWorkspace() {
+    currentState.nodes.forEach(n => {
+      if(n.internalState.osc) {
+        try { n.internalState.osc.stop(); } catch(e) {}
+        n.internalState.osc.disconnect();
+        if(n.internalState.gain) n.internalState.gain.disconnect();
+        n.internalState.osc = null;
+        n.internalState.gain = null;
+        n.internalState._lastFreq = null;
+        n.internalState._lastWaveType = null;
+      }
+    });
+    currentState.nodes = [];
+    currentState.connections = [];
+    document.querySelectorAll('.node').forEach(n => n.remove());
+    updatePortHighlights();
+    drawCables();
+    panX = 0; panY = 0;
+    currentState.panX = 0; currentState.panY = 0;
+    applyPan();
+  }
+
+  // ============================================================
+  // 8.  KONFIGURATIONS-MODAL
+  // ============================================================
+  let currentNodeForConfig = null;
+
+  function openConfigModal(node) {
+    currentNodeForConfig = node;
+    const body = document.getElementById('cfg-body');
+    body.innerHTML = '';
+
+    if(node.type === 'UI_BUTTON' || node.type === 'UI_KEY_BUTTON') {
+      body.innerHTML = `
+        <label>Modus:
+          <select id="cfg-btn-mode">
+            <option value="0" ${node.internalState.isToggle?'selected':''}>Schalter (Toggle)</option>
+            <option value="1" ${!node.internalState.isToggle?'selected':''}>Taster (Pulse)</option>
+          </select>
+        </label>
+      `;
+    } else if(node.type === 'UI_SLIDER' || node.type === 'DISP_GAUGE') {
+      body.innerHTML = `
+        <label>Minimum: <input type="number" id="cfg-min" value="${node.internalState.min}"></label>
+        <label>Maximum: <input type="number" id="cfg-max" value="${node.internalState.max}"></label>
+      `;
+    } else if(node.type === 'DISP_LED') {
+      body.innerHTML = `<label>LED Farbe: <input type="color" id="cfg-color" value="${node.internalState.color}"></label>`;
+    } else if(node.type === 'MUSIC_NOTE') {
+      let opts = '';
+      for(let n in NOTE_FREQS) opts += `<option value="${n}" ${node.internalState.note===n?'selected':''}>${n} (${NOTE_FREQS[n]} Hz)</option>`;
+      body.innerHTML = `<label>Note: <select id="cfg-note">${opts}</select></label>`;
+    } else if(node.type === 'MUSIC_TONE') {
+      body.innerHTML = `
+        <label>Wellenform:
+          <select id="cfg-wave">
+            <option value="sine" ${node.internalState.waveType==='sine'?'selected':''}>Sinus (Sine)</option>
+            <option value="triangle" ${node.internalState.waveType==='triangle'?'selected':''}>Dreieck (Triangle)</option>
+            <option value="square" ${node.internalState.waveType==='square'?'selected':''}>Rechteck (Rect)</option>
+            <option value="sawtooth" ${node.internalState.waveType==='sawtooth'?'selected':''}>Sägezahn (Sawtooth)</option>
+          </select>
+        </label>
+      `;
+    } else if(node.type === 'BUILDER_IN' || node.type === 'BUILDER_OUT') {
+      body.innerHTML = `
+        <label>Pin Name: <input type="text" id="cfg-pin" value="${node.internalState.pinName}"></label>
+        <label>Typ:
+          <select id="cfg-pintype">
+            <option value="number" ${node.internalState.pinType==='number'?'selected':''}>Analog (Zahl)</option>
+            <option value="boolean" ${node.internalState.pinType==='boolean'?'selected':''}>Digital (Boolean)</option>
+          </select>
+        </label>
+      `;
+    }
+
+    document.getElementById('config-modal').classList.remove('hidden');
+  }
+
+  function closeConfigModal() {
+    document.getElementById('config-modal').classList.add('hidden');
+    currentNodeForConfig = null;
+  }
+
+  function saveConfigModal() {
+    if(!currentNodeForConfig) return;
+    const node = currentNodeForConfig;
+
+    if(node.type === 'UI_BUTTON' || node.type === 'UI_KEY_BUTTON') {
+      node.internalState.isToggle = (document.getElementById('cfg-btn-mode').value === '0');
+      node.internalState.toggleState = 0;
+      node.outputs['out'] = 0;
+      const btn = document.getElementById(`btn_act_${node.id}`);
+      if(btn) btn.innerText = '⚫ - Aus';
+    } else if(node.type === 'UI_SLIDER' || node.type === 'DISP_GAUGE') {
+      node.internalState.min = parseFloat(document.getElementById('cfg-min').value) || 0;
+      node.internalState.max = parseFloat(document.getElementById('cfg-max').value) || 100;
+      if(node.type === 'UI_SLIDER') {
+        const sl = document.getElementById(`sl_${node.id}`);
+        if(sl) { sl.min = node.internalState.min; sl.max = node.internalState.max; }
+        node.outputs['val'] = Math.max(node.internalState.min, Math.min(node.internalState.max, node.outputs['val']));
+        node.internalState.val = node.outputs['val'];
+      }
+    } else if(node.type === 'DISP_LED') {
+      node.internalState.color = document.getElementById('cfg-color').value;
+    } else if(node.type === 'MUSIC_NOTE') {
+      node.internalState.note = document.getElementById('cfg-note').value;
+      node.outputs['freq'] = NOTE_FREQS[node.internalState.note];
+    } else if(node.type === 'MUSIC_TONE') {
+      node.internalState.waveType = document.getElementById('cfg-wave').value;
+    } else if(node.type === 'BUILDER_IN' || node.type === 'BUILDER_OUT') {
+      const oldName = node.internalState.pinName;
+      node.internalState.pinName = document.getElementById('cfg-pin').value.replace(/[^a-zA-Z0-9_]/g,'') || 'pin';
+      node.internalState.pinType = document.getElementById('cfg-pintype').value;
+
+      if(oldName !== node.internalState.pinName) {
+        currentState.connections.forEach(c => {
+          if(c.fromNode === node.id && c.fromPort === oldName) c.fromPort = node.internalState.pinName;
+          if(c.toNode === node.id && c.toPort === oldName) c.toPort = node.internalState.pinName;
+        });
+      }
+
+      if(node.type === 'BUILDER_IN') node.outputs['val'] = 0;
+
+      const domNode = document.getElementById(node.id);
+      if(domNode) {
+        domNode.remove();
+        renderNodeDOM(node, getTemplate(node.type));
+        updatePortHighlights();
+        drawCables();
+      }
+    }
+
+    updateNodeHeaderDisplay(node);
+    closeConfigModal();
+    runSingleTick();
+  }
+
+  // ============================================================
+  // 9.  MESSAGE & CONFIRM MODALS
+  // ============================================================
+  function showMessage(title, text) {
+    document.getElementById('msg-title').innerText = title;
+    document.getElementById('msg-text').innerText = text;
+    document.getElementById('message-modal').classList.remove('hidden');
+  }
+
+  function closeMessageModal() {
+    document.getElementById('message-modal').classList.add('hidden');
+  }
+
+  // Confirm-Modal mit Callback
+  let confirmCallback = null;
+
+  function showConfirm(title, text, onOk) {
+    document.getElementById('confirm-title').innerText = title;
+    document.getElementById('confirm-text').innerText = text;
+    document.getElementById('confirm-modal').classList.remove('hidden');
+    confirmCallback = onOk;
+  }
+
+  document.getElementById('confirm-ok').addEventListener('click', () => {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    if (confirmCallback) {
+      confirmCallback();
+      confirmCallback = null;
+    }
+  });
+  document.getElementById('confirm-cancel').addEventListener('click', () => {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    confirmCallback = null;
+  });
+
+  // ============================================================
+  // 10. KEY-HELP MODAL
+  // ============================================================
+  function openKeyHelpModal() {
+    document.getElementById('keyhelp-modal').classList.remove('hidden');
+  }
+  function closeKeyHelpModal() {
+    document.getElementById('keyhelp-modal').classList.add('hidden');
+  }
+
+  // ============================================================
+  // 11. PORTS & KABEL (mit Typ-Prüfung)
+  // ============================================================
+  function onPortPointerDown(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    const port = e.target;
+    port.setPointerCapture(e.pointerId);
+
+    const rect = port.getBoundingClientRect();
+    const wRect = workspace.getBoundingClientRect();
+    activeCable = {
+      pointerId: e.pointerId,
+      fromNode: port.dataset.nodeId,
+      fromPort: port.dataset.portName,
+      type: port.dataset.portType,
+      direction: port.dataset.direction,
+      startX: (rect.left + rect.width/2) - wRect.left,
+      startY: (rect.top + rect.height/2) - wRect.top,
+      mouseX: (rect.left + rect.width/2) - wRect.left,
+      mouseY: (rect.top + rect.height/2) - wRect.top
+    };
+
+    port.addEventListener('pointermove', onPortPointerMove);
+    port.addEventListener('pointerup', onPortPointerUp);
+  }
+
+  function onPortPointerMove(e) {
+    if(!activeCable) return;
+    const wRect = workspace.getBoundingClientRect();
+    activeCable.mouseX = e.clientX - wRect.left;
+    activeCable.mouseY = e.clientY - wRect.top;
+    drawCables();
+  }
+
+  function onPortPointerUp(e) {
+    const port = e.target;
+    port.removeEventListener('pointermove', onPortPointerMove);
+    port.removeEventListener('pointerup', onPortPointerUp);
+    port.releasePointerCapture(e.pointerId);
+
+    const element = document.elementFromPoint(e.clientX, e.clientY);
+    if(element && element.classList.contains('port')) {
+      const targetPort = element;
+      const source = activeCable;
+      // Typ-Prüfung
+      if(source.fromNode !== targetPort.dataset.nodeId &&
+         source.direction !== targetPort.dataset.direction &&
+         source.type === targetPort.dataset.portType) {
+        const outNode = source.direction === 'output' ? source.fromNode : targetPort.dataset.nodeId;
+        const outPort = source.direction === 'output' ? source.fromPort : targetPort.dataset.portName;
+        const inNode  = source.direction === 'input'  ? source.fromNode : targetPort.dataset.nodeId;
+        const inPort  = source.direction === 'input'  ? source.fromPort : targetPort.dataset.portName;
+
+        currentState.connections = currentState.connections.filter(c =>
+          !(c.toNode === inNode && c.toPort === inPort)
+        );
+        currentState.connections.push({
+          fromNode: outNode,
+          fromPort: outPort,
+          toNode: inNode,
+          toPort: inPort,
+          type: source.type
+        });
+      }
+    }
+    activeCable = null;
+    updatePortHighlights();
+    drawCables();
+    runSingleTick();
+  }
+
+  function getCableColor(fromNode, fromPort) {
+    let hash = 0;
+    const str = fromNode + fromPort;
+    for(let i=0; i<str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    return DISTINCT_COLORS[Math.abs(hash) % DISTINCT_COLORS.length];
+  }
+
+  function updatePortHighlights() {
+    document.querySelectorAll('.port').forEach(p => p.classList.remove('connected'));
+    currentState.connections.forEach(c => {
+      const outDom = document.querySelector(`.node#${c.fromNode} .port[data-port-name="${c.fromPort}"][data-direction="output"]`);
+      const inDom  = document.querySelector(`.node#${c.toNode} .port[data-port-name="${c.toPort}"][data-direction="input"]`);
+      if(outDom) outDom.classList.add('connected');
+      if(inDom)  inDom.classList.add('connected');
+    });
+  }
+
+  function getPortCoordinates(nodeId, portName, direction) {
+    const nodeDom = document.getElementById(nodeId);
+    if(!nodeDom) return null;
+    const portDom = nodeDom.querySelector(`.port[data-port-name="${portName}"][data-direction="${direction}"]`);
+    if(!portDom) return null;
+    const rect = portDom.getBoundingClientRect();
+    const wRect = workspace.getBoundingClientRect();
+    return {
+      x: (rect.left + rect.width/2) - wRect.left,
+      y: (rect.top + rect.height/2) - wRect.top
+    };
+  }
+
+  function drawCables() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    currentState.connections.forEach(c => {
+      const pOut = getPortCoordinates(c.fromNode, c.fromPort, 'output');
+      const pIn  = getPortCoordinates(c.toNode,   c.toPort,   'input');
+      if(pOut && pIn) {
+        drawBezierCurve(pOut.x, pOut.y, pIn.x, pIn.y,
+                        '#007acc', getCableColor(c.fromNode, c.fromPort),
+                        (hoveredCable === c));
+      }
+    });
+    if(activeCable) {
+      const ac = activeCable;
+      drawBezierCurve(
+        ac.direction === 'output' ? ac.startX : ac.mouseX,
+        ac.direction === 'output' ? ac.startY : ac.mouseY,
+        ac.direction === 'output' ? ac.mouseX : ac.startX,
+        ac.direction === 'output' ? ac.mouseY : ac.startY,
+        'rgba(0,122,204,0.7)', '#ffffff', false
+      );
+    }
+  }
+
+  function drawBezierCurve(x1, y1, x2, y2, coreColor, outerColor, highlight) {
+    const offset = Math.max(Math.abs(x2-x1)*0.5, 30);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.bezierCurveTo(x1+offset, y1, x2-offset, y2, x2, y2);
+
+    if(highlight) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 8;
+      ctx.shadowColor = '#ff2d55';
+      ctx.shadowBlur = 12;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.bezierCurveTo(x1+offset, y1, x2-offset, y2, x2, y2);
+    }
+    ctx.strokeStyle = outerColor;
+    ctx.lineWidth = highlight ? 4.5 : 3.5;
+    ctx.shadowBlur = 0;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.bezierCurveTo(x1+offset, y1, x2-offset, y2, x2, y2);
+    ctx.strokeStyle = coreColor;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // ============================================================
+  // 12. MODUL-BAUER (Builder Mode)
+  // ============================================================
+  function toggleBuilderMode() {
+    // Aktuellen Zustand in mainState sichern
+    mainState.panX = panX;
+    mainState.panY = panY;
+    mainState.nodes = currentState.nodes.slice();
+    mainState.connections = currentState.connections.slice();
+
+    isBuilderMode = true;
+    document.getElementById('mode-indicator').classList.add('active');
+    document.getElementById('btn-builder-toggle').style.display = 'none';
+    document.getElementById('btn-export').style.display = 'none';
+    document.getElementById('btn-builder-save').classList.add('active');
+    document.getElementById('btn-builder-exit').style.display = 'inline-block';
+
+    // Neuen leeren State für den Builder
+    currentState = { nodes: [], connections: [], panX: 0, panY: 0 };
+    workspaceContent.innerHTML = '';
+    panX = 0; panY = 0;
+    applyPan();
+    renderToolbox();
+  }
+
+  // ------------------------------------------------------------
+  // Modal für Modulnamen (einheitlich)
+  // ------------------------------------------------------------
+  let modulnameResolve = null;
+
+  function openModulnameModal() {
+    document.getElementById('modulname-modal').classList.remove('hidden');
+    const input = document.getElementById('modulname-input');
+    input.value = 'MyCustomMod';
+    input.focus();
+    input.select();
+  }
+
+  function closeModulnameModal() {
+    document.getElementById('modulname-modal').classList.add('hidden');
+    if(modulnameResolve) {
+      modulnameResolve(null);
+      modulnameResolve = null;
+    }
+  }
+
+  function saveModulnameModal() {
+    const input = document.getElementById('modulname-input');
+    const name = input.value.trim();
+    document.getElementById('modulname-modal').classList.add('hidden');
+    if(modulnameResolve) {
+      modulnameResolve(name || null);
+      modulnameResolve = null;
+    }
+  }
+
+  function showModulnamePrompt() {
+    return new Promise((resolve) => {
+      modulnameResolve = resolve;
+      openModulnameModal();
+    });
+  }
+
+  // ------------------------------------------------------------
+  // Modul speichern (mit Modal) – jetzt mit tiefer Kopie
+  // ------------------------------------------------------------
+  async function saveVisualModule() {
+    const moduleName = await showModulnamePrompt();
+    if(moduleName === null || moduleName === '') return;
+
+    const typeID = 'CUSTOM_' + moduleName.toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_' + Date.now();
+
+    // Eingangs- und Ausgangs-Pins aus den Builder-Nodes extrahieren
+    const inputs = [], outputs = [];
+    currentState.nodes.forEach(n => {
+      if(n.type === 'BUILDER_IN') inputs.push({ name: n.internalState.pinName, type: n.internalState.pinType || 'number' });
+      if(n.type === 'BUILDER_OUT') outputs.push({ name: n.internalState.pinName, type: n.internalState.pinType || 'number' });
+    });
+
+    // Tiefe Kopien der Sub-Nodes und Verbindungen – jetzt mit allen Feldern
+    const subNodes = currentState.nodes.map(n => JSON.parse(JSON.stringify(n)));
+    const subConnections = currentState.connections.map(c => JSON.parse(JSON.stringify(c)));
+
+    const template = {
+      title: moduleName,
+      cat: 'custom',
+      icon: '📦',
+      inputs: inputs,
+      outputs: outputs,
+      subNodes: subNodes,
+      subConnections: subConnections
+    };
+    customNodeTypes[typeID] = template;
+    CORE_TEMPLATES[typeID] = template;
+
+    // Builder beenden
+    isBuilderMode = false;
+    document.getElementById('mode-indicator').classList.remove('active');
+    document.getElementById('btn-builder-toggle').style.display = 'inline-block';
+    document.getElementById('btn-export').style.display = 'inline-block';
+    document.getElementById('btn-builder-save').classList.remove('active');
+    document.getElementById('btn-builder-exit').style.display = 'none';
+
+    currentState = mainState;
+    workspaceContent.innerHTML = '';
+    panX = mainState.panX || 0;
+    panY = mainState.panY || 0;
+    applyPan();
+
+    currentState.nodes.forEach(n => renderNodeDOM(n, getTemplate(n.type)));
+    renderToolbox();
+    drawCables();
+    updatePortHighlights();
+  }
+
+  function exitBuilder() {
+    if(!isBuilderMode) return;
+    if(currentState.nodes.length > 0) {
+      if(!confirm("Möchten Sie den Builder wirklich verlassen? Alle nicht gespeicherten Änderungen gehen verloren.")) {
+        return;
+      }
+    }
+
+    isBuilderMode = false;
+    document.getElementById('mode-indicator').classList.remove('active');
+    document.getElementById('btn-builder-toggle').style.display = 'inline-block';
+    document.getElementById('btn-export').style.display = 'inline-block';
+    document.getElementById('btn-builder-save').classList.remove('active');
+    document.getElementById('btn-builder-exit').style.display = 'none';
+
+    currentState = mainState;
+    workspaceContent.innerHTML = '';
+    panX = mainState.panX || 0;
+    panY = mainState.panY || 0;
+    applyPan();
+
+    currentState.nodes.forEach(n => renderNodeDOM(n, getTemplate(n.type)));
+    renderToolbox();
+    drawCables();
+    updatePortHighlights();
+  }
+
+  // ============================================================
+  // 13. AUSFÜHRUNGS-ENGINE (synchron, sofortige Updates) mit Debug
+  // ============================================================
+  function executeLogicForNode(node, nodesList) {
+    if(node.type === 'LOGIC_AND') node.outputs['out'] = (node.inputs['inA']>=1 && node.inputs['inB']>=1) ? 1 : 0;
+    else if(node.type === 'LOGIC_OR') node.outputs['out'] = (node.inputs['inA']>=1 || node.inputs['inB']>=1) ? 1 : 0;
+    else if(node.type === 'LOGIC_NOT') node.outputs['out'] = (node.inputs['in']<1) ? 1 : 0;
+    else if(node.type === 'LOGIC_XOR') node.outputs['out'] = ((node.inputs['inA']>=1) !== (node.inputs['inB']>=1)) ? 1 : 0;
+    else if(node.type === 'LOGIC_NAND') node.outputs['out'] = (!(node.inputs['inA']>=1 && node.inputs['inB']>=1)) ? 1 : 0;
+    else if(node.type === 'LOGIC_NOR') node.outputs['out'] = (!(node.inputs['inA']>=1 || node.inputs['inB']>=1)) ? 1 : 0;
+    else if(node.type === 'LOGIC_XNOR') node.outputs['out'] = ((node.inputs['inA']>=1) === (node.inputs['inB']>=1)) ? 1 : 0;
+    else if(node.type === 'LOGIC_COMP') node.outputs['out'] = ((node.inputs['valA']||0) > (node.inputs['valB']||0)) ? 1 : 0;
+    else if(node.type === 'LOGIC_SR') {
+      if(node.inputs['S']>=1) node.internalState.q = 1;
+      else if(node.inputs['R']>=1) node.internalState.q = 0;
+      node.outputs['Q'] = node.internalState.q;
+      node.outputs['!Q'] = node.internalState.q===1 ? 0 : 1;
+    }
+    else if(node.type === 'LOGIC_RS') {
+      if(node.inputs['R']>=1) node.internalState.q = 0;
+      else if(node.inputs['S']>=1) node.internalState.q = 1;
+      node.outputs['Q'] = node.internalState.q;
+      node.outputs['!Q'] = node.internalState.q===1 ? 0 : 1;
+    }
+    else if(node.type === 'MATH_ADD') node.outputs['out'] = (node.inputs['A']||0) + (node.inputs['B']||0);
+    else if(node.type === 'MATH_SUB') node.outputs['out'] = (node.inputs['A']||0) - (node.inputs['B']||0);
+    else if(node.type === 'MATH_MUL') node.outputs['out'] = (node.inputs['A']||0) * (node.inputs['B']||0);
+    else if(node.type === 'MATH_DIV') node.outputs['out'] = node.inputs['B']!==0 ? (node.inputs['A']||0)/node.inputs['B'] : 0;
+    else if(node.type === 'MATH_MOD') node.outputs['out'] = node.inputs['B']!==0 ? (node.inputs['A']||0)%node.inputs['B'] : 0;
+    else if(node.type === 'MATH_ABS') node.outputs['out'] = Math.abs(node.inputs['in']||0);
+    else if(node.type === 'MATH_MIN') node.outputs['out'] = Math.min((node.inputs['A']||0), (node.inputs['B']||0));
+    else if(node.type === 'MATH_MAX') node.outputs['out'] = Math.max((node.inputs['A']||0), (node.inputs['B']||0));
+    else if(node.type === 'MATH_POW') node.outputs['out'] = Math.pow((node.inputs['A']||0), (node.inputs['B']||0));
+    else if(node.type === 'MATH_SQRT') node.outputs['out'] = Math.sqrt(Math.max(0, node.inputs['A']||0));
+    else if(node.type === 'MATH_SIN') node.outputs['out'] = Math.sin(node.inputs['in']||0);
+    else if(node.type === 'MATH_COS') node.outputs['out'] = Math.cos(node.inputs['in']||0);
+    else if(node.type === 'MATH_TAN') node.outputs['out'] = Math.tan(node.inputs['in']||0);
+    else if(node.type === 'MATH_ASIN') node.outputs['out'] = Math.asin(Math.max(-1, Math.min(1, node.inputs['in']||0)));
+    else if(node.type === 'MATH_ACOS') node.outputs['out'] = Math.acos(Math.max(-1, Math.min(1, node.inputs['in']||0)));
+    else if(node.type === 'MATH_ATAN') node.outputs['out'] = Math.atan(node.inputs['in']||0);
+    else if(node.type === 'MATH_ROUND') node.outputs['out'] = Math.round(node.inputs['in']||0);
+    else if(node.type === 'MATH_TRANSISTOR') node.outputs['out'] = (node.inputs['gate']>=1) ? (node.inputs['in']||0) : 0;
+    else if(node.type === 'CONV_ADC') {
+      let v = Math.max(0, Math.min(255, Math.round(node.inputs['val']||0)));
+      for(let i=0; i<8; i++) node.outputs[`b${i}`] = (v & (1<<i)) ? 1 : 0;
+    }
+    else if(node.type === 'CONV_DAC') {
+      let v = 0;
+      for(let i=0; i<8; i++) if(node.inputs[`b${i}`]>=1) v |= (1<<i);
+      node.outputs['val'] = v;
+    }
+    else if(node.type === 'ANALOG_SIN') {
+      node.internalState.phase = (node.internalState.phase||0) + ((node.inputs['freq']||2) * 0.05);
+      node.outputs['out'] = Math.sin(node.internalState.phase) * 10;
+    }
+    else if(node.type === 'ANALOG_RAND') {
+      if(node.inputs['trigger']>=1 && node.internalState.lastTrigger===0) {
+        node.outputs['out'] = (Math.random() - 0.5) * 50;
+      }
+      node.internalState.lastTrigger = node.inputs['trigger']||0;
+    }
+    else if(node.type === 'UTIL_CLOCK') {
+      const now = Date.now();
+      if(now - node.internalState.lastTick >= (node.inputs['ms']||1000)) {
+        node.internalState.currentPulse = node.internalState.currentPulse===1 ? 0 : 1;
+        node.internalState.lastTick = now;
+      }
+      node.outputs['pulse'] = node.internalState.currentPulse;
+    }
+    else if(node.type === 'UTIL_DELAY') {
+      const maxTicks = Math.max(1, Math.floor(node.inputs['ticks']||10));
+      node.internalState.buffer.push(node.inputs['in']||0);
+      while(node.internalState.buffer.length > maxTicks) {
+        node.outputs['out'] = node.internalState.buffer.shift();
+      }
+    }
+    else if(node.type === 'BUILDER_IN') {
+      const pinName = node.internalState.pinName || 'val';
+      node.outputs[pinName] = node.inputs['external'] || 0;
+    }
+  }
+
+  // Ein einzelner, vollständiger Ausführungsdurchlauf
+  function runSingleTick() {
+    // 1. Alle Eingänge zurücksetzen (damit nicht verbundene Ports auf 0 stehen)
+    currentState.nodes.forEach(node => {
+      const template = getTemplate(node.type);
+      if(template) {
+        template.inputs.forEach(p => node.inputs[p.name] = 0);
+      }
+    });
+
+    // 2. Verbindungen propagieren (Quell-Outputs zu Ziel-Inputs)
+    currentState.connections.forEach(c => {
+      const src = currentState.nodes.find(n => n.id === c.fromNode);
+      const dest = currentState.nodes.find(n => n.id === c.toNode);
+      if(src && dest) {
+        dest.inputs[c.toPort] = src.outputs[c.fromPort];
+      }
+    });
+
+    // 3. Jeden Node ausführen
+    currentState.nodes.forEach(node => {
+      executeLogicForNode(node, currentState.nodes);
+
+      // Custom-Module mit Debug-Ausgabe
+      if(node.type.startsWith('CUSTOM_')) {
+        const template = customNodeTypes[node.type];
+        if(template && node.internalState.subNodes) {
+          const subNodes = node.internalState.subNodes;
+          const subConns = node.internalState.subConnections || [];
+
+          if (DEBUG_CUSTOM) {
+            console.log(`[Custom] ${node.id} (${template.title})`);
+            console.log('  Externe Eingänge:', JSON.stringify(node.inputs));
+          }
+
+          // 1. Sub-Inputs zurücksetzen
+          subNodes.forEach(sn => {
+            const st = getTemplate(sn.type);
+            if(st) st.inputs.forEach(p => sn.inputs[p.name] = 0);
+          });
+
+          // 2. Externe Eingänge setzen (vom übergeordneten Node)
+          subNodes.forEach(sn => {
+            if(sn.type === 'BUILDER_IN') {
+              sn.inputs['external'] = node.inputs[sn.internalState.pinName] || 0;
+            }
+          });
+
+          // 3. Interne Verbindungen propagieren
+          subConns.forEach(c => {
+            const src = subNodes.find(n => n.id === c.fromNode);
+            const dest = subNodes.find(n => n.id === c.toNode);
+            if(src && dest) {
+              if (DEBUG_CUSTOM) {
+                console.log(`  Verbindung: ${src.id}.${c.fromPort} -> ${dest.id}.${c.toPort}  (Wert: ${src.outputs[c.fromPort]})`);
+              }
+              dest.inputs[c.toPort] = src.outputs[c.fromPort];
+            } else {
+              if (DEBUG_CUSTOM) {
+                console.warn(`  Verbindung fehlgeschlagen: from=${c.fromNode}, to=${c.toNode}`);
+              }
+            }
+          });
+
+          // 4. Sub-Nodes ausführen – mit Debug für jeden Sub-Node
+          subNodes.forEach(sn => {
+            if (DEBUG_CUSTOM) {
+              console.log(`  Sub-Node ${sn.id} (${sn.type}) vorher:`, JSON.stringify(sn.inputs));
+            }
+            executeLogicForNode(sn, subNodes);
+            if (DEBUG_CUSTOM) {
+              console.log(`  Sub-Node ${sn.id} (${sn.type}) nachher:`, JSON.stringify(sn.outputs));
+            }
+          });
+
+          // 5. Ausgänge des Custom-Moduls setzen (jetzt mit dem korrekten Pin-Namen)
+          subNodes.forEach(sn => {
+            if(sn.type === 'BUILDER_OUT') {
+              const pinName = sn.internalState.pinName || 'val';
+              node.outputs[pinName] = sn.inputs[pinName] || 0;
+            }
+          });
+
+          if (DEBUG_CUSTOM) {
+            console.log('  Ausgänge des Custom-Moduls:', JSON.stringify(node.outputs));
+          }
+
+          // 6. Status-Punkt aktualisieren
+          const statusDisp = document.getElementById(`disp_${node.id}`);
+          if(statusDisp) {
+            const anyOut = Object.values(node.outputs).some(v => v != 0);
+            statusDisp.style.color = anyOut ? '#34c759' : '#ff453a';
+            statusDisp.innerText = anyOut ? '●' : '○';
+          }
+        } else {
+          if (DEBUG_CUSTOM) {
+            console.warn(`[Custom] ${node.id} hat kein Template oder keine Sub-Nodes.`);
+          }
+        }
+      }
+
+      // Audio-Verarbeitung (MUSIC_TONE)
+      if(node.type === 'MUSIC_TONE') {
+        let f = node.inputs['freq'] || 0;
+        let v = node.inputs['vol'] || 0;
+        let clampedVol = Math.max(0, Math.min(0.8, v));
+        let isPlaying = (f > 0 && clampedVol > 0);
+
+        if(isPlaying && globalAudioCtx && globalAudioCtx.state === 'running') {
+          if(!node.internalState.osc) {
+            node.internalState.osc = globalAudioCtx.createOscillator();
+            node.internalState.gain = globalAudioCtx.createGain();
+            node.internalState.osc.connect(node.internalState.gain);
+            node.internalState.gain.connect(globalAudioCtx.destination);
+            node.internalState.osc.start();
+            node.internalState._lastFreq = null;
+            node.internalState._lastWaveType = null;
+          }
+          if(node.internalState._lastFreq !== f) {
+            node.internalState._lastFreq = f;
+            if(isFinite(f) && f > 0) {
+              node.internalState.osc.frequency.setValueAtTime(f, globalAudioCtx.currentTime);
+            }
+          }
+          if(node.internalState._lastWaveType !== node.internalState.waveType) {
+            node.internalState._lastWaveType = node.internalState.waveType;
+            node.internalState.osc.type = node.internalState.waveType || 'sine';
+          }
+          node.internalState.gain.gain.setTargetAtTime(clampedVol, globalAudioCtx.currentTime, 0.05);
+        } else {
+          if(node.internalState.osc) {
+            try {
+              node.internalState.gain.gain.setTargetAtTime(0, globalAudioCtx.currentTime, 0.05);
+              if(!node._stopTimer) {
+                node._stopTimer = setTimeout(() => {
+                  if(node.internalState.osc) {
+                    try { node.internalState.osc.stop(); } catch(e) {}
+                    node.internalState.osc.disconnect();
+                    node.internalState.osc = null;
+                  }
+                  if(node.internalState.gain) {
+                    node.internalState.gain.disconnect();
+                    node.internalState.gain = null;
+                  }
+                  node.internalState._lastFreq = null;
+                  node.internalState._lastWaveType = null;
+                  node._stopTimer = null;
+                }, 200);
+              }
+            } catch(e) {}
+          }
+        }
+
+        if(document.getElementById(node.id)) {
+          const disp = document.getElementById(`disp_${node.id}`);
+          if(disp) {
+            disp.innerText = isPlaying ? "PLAY" : "OFF";
+            disp.className = `logic-display ${isPlaying ? 'val-1' : 'val-0'}`;
+          }
+        }
+      }
+
+      // UI-Updates für Display-Nodes
+      if(document.getElementById(node.id)) {
+        if(node.outputs['out'] !== undefined && node.type !== 'MUSIC_TONE' && !node.type.startsWith('CUSTOM_')) updateLogicDisp(node.id, node.outputs['out']);
+        if(node.outputs['Q'] !== undefined) updateLogicDisp(node.id, node.outputs['Q']);
+        if(node.outputs['freq'] !== undefined) updateLogicDisp(node.id, node.outputs['freq']);
+
+        if(node.type === 'DISP_MATRIX') {
+          for(let i=0; i<64; i++) {
+            const pixel = document.getElementById(`pixel_${node.id}_${i}`);
+            if(pixel) {
+              if(node.inputs[`p${i}`] >= 1) pixel.classList.add('active');
+              else pixel.classList.remove('active');
+            }
+          }
+        } else if(node.type === 'DISP_LED') {
+          const led = document.getElementById(`led_${node.id}`);
+          if(led) {
+            if((node.inputs['in']||0) >= 1) {
+              led.classList.add('on');
+              led.style.backgroundColor = node.internalState.color || '#ffffff';
+              led.style.borderColor = '#ffffff';
+              led.style.boxShadow = `0 0 15px ${node.internalState.color||'#eeeeee'}, inset 0 2px 10px rgba(255,255,255,0.5)`;
+            } else {
+              led.classList.remove('on');
+              led.style.backgroundColor = '#222';
+              led.style.borderColor = '#111';
+              led.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.6)';
+            }
+          }
+        } else if(node.type === 'DISP_VAL') {
+          const valEl = document.getElementById(`val_${node.id}`);
+          if(valEl) valEl.innerText = (node.inputs['in']||0).toFixed(2);
+        } else if(node.type === 'DISP_GAUGE') {
+          renderGaugeGraph(node);
+        } else if(node.type === 'DISP_SCOPE') {
+          node.internalState.history.push(node.inputs['in']||0);
+          if(node.internalState.history.length > 100) node.internalState.history.shift();
+          renderScopeGraph(node);
+        }
+      }
+    });
+  }
+
+  function updateLogicDisp(nodeId, val) {
+    const disp = document.getElementById(`disp_${nodeId}`);
+    if(disp) {
+      disp.innerText = typeof val === 'number' ? val.toFixed(1) : val;
+      disp.className = `logic-display ${val >= 1 ? 'val-1' : 'val-0'}`;
+    }
+  }
+
+  function renderScopeGraph(node) {
+    const canvasEl = document.getElementById(`scope_canvas_${node.id}`);
+    if(!canvasEl) return;
+    const c = canvasEl.getContext('2d');
+    const w = canvasEl.width, h = canvasEl.height;
+
+    c.fillStyle = '#030303';
+    c.fillRect(0,0,w,h);
+    c.strokeStyle = '#1a2b1a';
+    c.lineWidth = 1;
+    c.beginPath();
+    for(let x=0; x<w; x+=10) { c.moveTo(x,0); c.lineTo(x,h); }
+    for(let y=0; y<h; y+=10) { c.moveTo(0,y); c.lineTo(w,y); }
+    c.stroke();
+    c.strokeStyle = '#335533';
+    c.beginPath();
+    c.moveTo(0, h/2);
+    c.lineTo(w, h/2);
+    c.stroke();
+
+    const history = node.internalState.history;
+    if(!history || history.length===0) return;
+    let min = Math.min(...history);
+    let max = Math.max(...history);
+    if(min===max) { min -= 1; max += 1; }
+    const range = max - min;
+
+    c.strokeStyle = '#00ffff';
+    c.lineWidth = 2.5;
+    c.lineJoin = 'round';
+    c.beginPath();
+    for(let i=0; i<history.length; i++) {
+      const x = (i/history.length)*w;
+      const y = h - ((history[i]-min)/range)*(h-8) - 4;
+      if(i===0) c.moveTo(x,y);
+      else c.lineTo(x,y);
+    }
+    c.stroke();
+  }
+
+  function renderGaugeGraph(node) {
+    const canvasEl = document.getElementById(`gauge_canvas_${node.id}`);
+    if(!canvasEl) return;
+    const c = canvasEl.getContext('2d');
+    const val = node.inputs['in'] || 0;
+
+    c.clearRect(0,0, canvasEl.width, canvasEl.height);
+    const cx = canvasEl.width/2, cy = canvasEl.height-12, radius = 42;
+
+    c.beginPath();
+    c.arc(cx, cy, radius, Math.PI, 0);
+    c.lineWidth = 12;
+    c.strokeStyle = '#2a2a2b';
+    c.stroke();
+
+    const min = node.internalState.min;
+    const max = node.internalState.max;
+    let range = max - min;
+    if(range === 0) range = 1;
+    let pct = (val - min) / range;
+    pct = Math.max(0, Math.min(1, pct));
+    const endAngle = Math.PI + pct * Math.PI;
+
+    c.beginPath();
+    c.arc(cx, cy, radius, Math.PI, endAngle);
+    c.lineWidth = 12;
+    c.strokeStyle = pct > 0.8 ? '#ff453a' : (pct > 0.5 ? '#ffeb3b' : 'var(--accent-green)');
+    c.stroke();
+
+    c.fillStyle = '#fff';
+    c.font = '11px monospace';
+    c.textAlign = 'center';
+    c.fillText(val.toFixed(1), cx, cy + 8);
+  }
+
+  // ============================================================
+  // 14. TASTATUR-INTERAKTION
+  // ============================================================
+  window.addEventListener('keydown', (e) => {
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    currentState.nodes.forEach(node => {
+      if(node.type === 'UI_KEY_BUTTON' && (e.key === node.internalState.keyBind || e.code === node.internalState.keyBind)) {
+        if(!e.repeat) {
+          if(node.internalState.isToggle) {
+            node.internalState.toggleState = node.internalState.toggleState === 1 ? 0 : 1;
+            node.outputs['out'] = node.internalState.toggleState;
+          } else {
+            node.outputs['out'] = 1;
+          }
+          const btn = document.getElementById(`btn_act_${node.id}`);
+          if(btn) btn.innerText = node.outputs['out'] === 1 ? '🟢 - An' : '⚫ - Aus';
+          runSingleTick();
+        }
+      }
+    });
+  });
+
+  window.addEventListener('keyup', (e) => {
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    currentState.nodes.forEach(node => {
+      if(node.type === 'UI_KEY_BUTTON' && (e.key === node.internalState.keyBind || e.code === node.internalState.keyBind)) {
+        if(!node.internalState.isToggle) {
+          node.outputs['out'] = 0;
+          const btn = document.getElementById(`btn_act_${node.id}`);
+          if(btn) btn.innerText = '⚫ - Aus';
+          runSingleTick();
+        }
+      }
+    });
+  });
+
+  // ============================================================
+  // 15. EXPORT / IMPORT (Standalone HTML) – KORRIGIERT
+  // ============================================================
+  function exportToStandaloneHTML() {
+    if(isBuilderMode) {
+      showMessage('Hinweis', 'Beende zuerst den Modul-Builder!');
+      return;
+    }
+
+    // Export-Daten zusammenstellen – nur relevante Felder
+    const exportData = {
+      nodes: mainState.nodes.map(n => {
+        const nodeData = {
+          id: n.id,
+          type: n.type,
+          x: n.x,
+          y: n.y,
+          internalState: n.internalState
+        };
+        // Für UI_SLIDER den aktuellen Wert speichern
+        if (n.type === 'UI_SLIDER') {
+          nodeData.internalState = { ...nodeData.internalState, val: n.outputs.val };
+        }
+        return nodeData;
+      }),
+      connections: mainState.connections,
+      customTypes: JSON.parse(JSON.stringify(customNodeTypes))
+    };
+
+    const dataPayload = JSON.stringify(exportData);
+
+    const currentHTML = document.documentElement.outerHTML;
+    let parser = new DOMParser();
+    let cleanDoc = parser.parseFromString(currentHTML, 'text/html');
+    cleanDoc.querySelectorAll('.node').forEach(n => n.remove());
+
+    // Alte Speicher-Skripte entfernen
+    let oldScripts = cleanDoc.querySelectorAll('script#mls-save-data');
+    oldScripts.forEach(s => s.remove());
+
+    // Neues Skript mit den aktuellen Daten
+    const injectScript = `
+    const savedBlueprint = ${dataPayload};
+    window.addEventListener('DOMContentLoaded', () => {
+      if(savedBlueprint && savedBlueprint.customTypes) {
+        for (let key in customNodeTypes) delete customNodeTypes[key];
+        Object.assign(customNodeTypes, savedBlueprint.customTypes);
+        for(let k in savedBlueprint.customTypes) {
+          CORE_TEMPLATES[k] = savedBlueprint.customTypes[k];
+        }
+        renderToolbox();
+      }
+      if(savedBlueprint && savedBlueprint.nodes) {
+        clearWorkspace();
+        const importedNodes = JSON.parse(JSON.stringify(savedBlueprint.nodes));
+        importedNodes.forEach(n => {
+          createNode(n.type, n.x, n.y, n.id, { internalState: n.internalState }, mainState);
+        });
+        mainState.connections = JSON.parse(JSON.stringify(savedBlueprint.connections));
+        setTimeout(() => { updatePortHighlights(); resizeCanvas(); }, 250);
+      }
+    });
+    `;
+
+    const scriptTag = cleanDoc.createElement('script');
+    scriptTag.id = 'mls-save-data';
+    scriptTag.text = injectScript;
+    cleanDoc.body.appendChild(scriptTag);
+
+    const blob = new Blob(["<!DOCTYPE html>\n" + cleanDoc.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'MLSV2_Save_Extension.html';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // ============================================================
+  // 16. HAUPTSCHLEIFE
+  // ============================================================
+  function executionLoop() {
+    runSingleTick();
+    requestAnimationFrame(executionLoop);
+  }
+
+  requestAnimationFrame(executionLoop);
+  </script>
+</body>
+</html>
